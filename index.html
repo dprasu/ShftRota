@@ -37,6 +37,9 @@
         <button class="tab-btn" onclick="switchTab('weekend')" id="tabWeekend">
             🌙 Weekend <span class="tab-badge we">Sat – Sun</span>
         </button>
+        <button class="tab-btn" onclick="switchTab('holiday')" id="tabHoliday">
+            🏖️ Bank Holidays <span class="tab-badge bh" id="holidayCount">—</span>
+        </button>
     </div>
 
     <div class="container">
@@ -106,6 +109,58 @@
         <div class="handoff-section">
             <div class="handoff-header">🔄 Today's Handoff Log</div>
             <div id="handoffLog"></div>
+        </div>
+
+        <!-- ===== BANK HOLIDAYS ===== -->
+        <div class="holiday-section" id="holidaySection" style="display:none;">
+            <div class="holiday-panel">
+                <div class="holiday-panel-header">
+                    <h3>🏖️ Bank Holidays Calendar</h3>
+                    <div class="holiday-filters">
+                        <button class="holiday-filter active" onclick="filterHolidays('all')" data-filter="all">All</button>
+                        <button class="holiday-filter" onclick="filterHolidays('India')" data-filter="India">🇮🇳 India</button>
+                        <button class="holiday-filter" onclick="filterHolidays('UK')" data-filter="UK">🇬🇧 UK</button>
+                        <button class="holiday-filter" onclick="filterHolidays('USA_EST')" data-filter="USA_EST">🇺🇸 USA</button>
+                    </div>
+                </div>
+                <div class="holiday-info-bar" id="holidayInfoBar"></div>
+                <table class="holiday-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Day</th>
+                            <th>Holiday</th>
+                            <th>Region</th>
+                            <th>Type</th>
+                            <th>Coverage</th>
+                            <th>On-Call (Extended)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="holidayTableBody"></tbody>
+                </table>
+            </div>
+            <div class="holiday-summary">
+                <div class="holiday-summary-card india">
+                    <div class="holiday-summary-flag">🇮🇳</div>
+                    <div class="holiday-summary-count" id="holidayCountIndia">0</div>
+                    <div class="holiday-summary-label">India Holidays</div>
+                </div>
+                <div class="holiday-summary-card uk">
+                    <div class="holiday-summary-flag">🇬🇧</div>
+                    <div class="holiday-summary-count" id="holidayCountUK">0</div>
+                    <div class="holiday-summary-label">UK Bank Holidays</div>
+                </div>
+                <div class="holiday-summary-card usa">
+                    <div class="holiday-summary-flag">🇺🇸</div>
+                    <div class="holiday-summary-count" id="holidayCountUSA">0</div>
+                    <div class="holiday-summary-label">USA Federal Holidays</div>
+                </div>
+                <div class="holiday-summary-card all">
+                    <div class="holiday-summary-flag">🌍</div>
+                    <div class="holiday-summary-count" id="holidayCountAll">0</div>
+                    <div class="holiday-summary-label">Total Holidays</div>
+                </div>
+            </div>
         </div>
 
         <!-- ===== TEAM ROSTER ===== -->

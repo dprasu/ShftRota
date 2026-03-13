@@ -61,9 +61,11 @@ body {
 .tab-btn .tab-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
 .tab-btn .tab-badge.wd { background: rgba(63,185,80,0.15); color: var(--accent-green); }
 .tab-btn .tab-badge.we { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+.tab-btn .tab-badge.bh { background: rgba(248,81,73,0.15); color: var(--accent-red); }
 .tab-indicator { font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: 700; margin-left: auto; align-self: center; }
 .tab-indicator.weekday { background: rgba(63,185,80,0.15); color: var(--accent-green); }
 .tab-indicator.weekend { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+.tab-indicator.holiday { background: rgba(248,81,73,0.15); color: var(--accent-red); }
 
 /* ===== Layout ===== */
 .container { max-width: 1500px; margin: 0 auto; padding: 20px; }
@@ -242,4 +244,72 @@ td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
 @media (max-width: 600px) {
     .stats-row { grid-template-columns: repeat(2, 1fr); }
     .tab-btn { padding: 10px 14px; font-size: 12px; }
+    .holiday-summary { grid-template-columns: repeat(2, 1fr); }
+    .holiday-filters { flex-wrap: wrap; }
 }
+
+/* ===== Bank Holiday Panel ===== */
+.holiday-section { margin-bottom: 24px; }
+.holiday-panel {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; margin-bottom: 16px;
+}
+.holiday-panel-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px;
+}
+.holiday-panel-header h3 { font-size: 14px; font-weight: 600; }
+.holiday-filters { display: flex; gap: 6px; }
+.holiday-filter {
+    background: var(--bg-primary); border: 1px solid var(--border);
+    color: var(--text-secondary); padding: 5px 14px; border-radius: 20px;
+    cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;
+}
+.holiday-filter:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+.holiday-filter.active { background: var(--accent-red); color: #fff; border-color: var(--accent-red); }
+.holiday-info-bar {
+    padding: 10px 20px; background: rgba(248,81,73,0.06);
+    font-size: 12px; color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+}
+.holiday-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.holiday-table th {
+    background: var(--bg-secondary); padding: 10px 14px; text-align: left;
+    font-weight: 600; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-secondary);
+}
+.holiday-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.holiday-row-past { opacity: 0.4; }
+.holiday-row-today { background: rgba(248,81,73,0.1); border-left: 3px solid var(--accent-red); }
+.holiday-row-upcoming { opacity: 1; }
+.badge-holiday { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+.badge-all { background: rgba(57,210,192,0.15); color: var(--accent-cyan); }
+.holiday-day-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+}
+.holiday-day-badge.weekday { background: rgba(63,185,80,0.12); color: var(--accent-green); }
+.holiday-day-badge.weekend { background: rgba(188,140,255,0.12); color: var(--accent-purple); }
+
+/* Holiday Summary Cards */
+.holiday-summary {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+}
+.holiday-summary-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px; text-align: center;
+    transition: border-color 0.2s;
+}
+.holiday-summary-card:hover { border-color: var(--accent-cyan); }
+.holiday-summary-card.india { border-top: 3px solid var(--accent-orange); }
+.holiday-summary-card.uk    { border-top: 3px solid var(--accent-blue); }
+.holiday-summary-card.usa   { border-top: 3px solid var(--accent-purple); }
+.holiday-summary-card.all   { border-top: 3px solid var(--accent-cyan); }
+.holiday-summary-flag { font-size: 28px; margin-bottom: 6px; }
+.holiday-summary-count { font-size: 32px; font-weight: 700; }
+.holiday-summary-card.india .holiday-summary-count { color: var(--accent-orange); }
+.holiday-summary-card.uk    .holiday-summary-count { color: var(--accent-blue); }
+.holiday-summary-card.usa   .holiday-summary-count { color: var(--accent-purple); }
+.holiday-summary-card.all   .holiday-summary-count { color: var(--accent-cyan); }
+.holiday-summary-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }

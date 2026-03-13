@@ -8,6 +8,7 @@
 
 /* ===== GLOBAL STATE ===== */
 let TEAM          = [];
+let HOLIDAYS      = [];
 let SETTINGS      = {};
 let REGIONS       = {};
 let WEEKEND_REGIONS = {};
@@ -16,6 +17,7 @@ let ROTATION_ANCHOR;
 let currentMode   = 'weekday';
 let currentWeekOffset = 0;
 let displayWeekOffset = 0;
+let holidayFilter = 'all';
 
 /* ===== CONFIG LOADER ===== */
 
@@ -79,6 +81,44 @@ async function loadRoster() {
     }
 }
 
+async function loadHolidays() {
+    try {
+        const resp = await fetch('config/bank-holidays.csv');
+        if (!resp.ok) { console.warn('bank-holidays.csv not found — holidays tab disabled'); return; }
+        const text = await resp.text();
+        const rows = parseCSV(text);
+        HOLIDAYS = rows.map(r => ({
+            date: r.date,
+            name: r.name,
+            region: r.region,
+            type: r.type || 'Public Holiday'
+        })).sort((a, b) => a.date.localeCompare(b.date));
+
+        // Update holiday count badge
+        const badge = document.getElementById('holidayCount');
+        if (badge) badge.textContent = HOLIDAYS.length;
+    } catch (e) {
+        console.warn('Could not load holidays:', e.message);
+    }
+}
+
+function isTodayHoliday() {
+    const todayStr = formatDate(new Date());
+    return HOLIDAYS.filter(h =>
+        h.date === todayStr && (h.region === 'ALL' || getRegionKeys().includes(h.region))
+    );
+}
+
+function isDateHoliday(dateStr, region) {
+    return HOLIDAYS.some(h =>
+        h.date === dateStr && (h.region === 'ALL' || h.region === region)
+    );
+}
+
+function getHolidaysForRegion(region) {
+    return HOLIDAYS.filter(h => h.region === 'ALL' || h.region === region);
+}
+
 /* ===== HELPER FUNCTIONS ===== */
 
 function getActiveRegions() {
@@ -125,6 +165,12 @@ function isTodayWeekend() {
     return day === 0 || day === 6;
 }
 
+function isTodayWeekendOrHoliday() {
+    if (isTodayWeekend()) return true;
+    if (SETTINGS.holidays?.treatAsWeekend && isTodayHoliday().length > 0) return true;
+    return false;
+}
+
 function getLocalTime(tz) {
     try {
         return new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -138,9 +184,18 @@ function formatDate(d) {
 /* ===== TAB SWITCHING ===== */
 
 function switchTab(mode) {
-    currentMode = mode;
+    currentMode = mode === 'holiday' ? 'weekend' : mode; // holidays use weekend shifts
     document.getElementById('tabWeekday').className = 'tab-btn' + (mode === 'weekday' ? ' active' : '');
     document.getElementById('tabWeekend').className = 'tab-btn' + (mode === 'weekend' ? ' active' : '');
+    document.getElementById('tabHoliday').className = 'tab-btn' + (mode === 'holiday' ? ' active' : '');
+
+    // Show/hide holiday panel
+    const holidaySection = document.getElementById('holidaySection');
+    if (holidaySection) holidaySection.style.display = mode === 'holiday' ? 'block' : 'none';
+
+    if (mode === 'holiday') {
+        renderHolidays();
+    }
     renderAll();
 }
 // Expose to global for onclick handlers
@@ -394,9 +449,24 @@ function updateStats() {
     const indicator = document.getElementById('dayTypeIndicator');
     if (indicator) {
         const isWeekend = isTodayWeekend();
-        if (currentMode === 'weekday') {
+        const todayHols = isTodayHoliday();
+        const isHol = todayHols.length > 0;
+        const activeTab = document.querySelector('.tab-btn.active');
+        const viewingHoliday = activeTab && activeTab.id === 'tabHoliday';
+
+        if (viewingHoliday) {
+            indicator.className = 'tab-indicator holiday';
+            indicator.textContent = isHol
+                ? '🏖️ BANK HOLIDAY — ' + todayHols[0].name
+                : '🏖️ Bank Holidays (Viewing)';
+        } else if (currentMode === 'weekday') {
             indicator.className = 'tab-indicator weekday';
-            indicator.textContent = isWeekend ? '📋 Weekday (Viewing)' : '📋 WEEKDAY — LIVE';
+            if (isHol) {
+                indicator.textContent = '🏖️ Bank Holiday: ' + todayHols[0].name;
+                indicator.className = 'tab-indicator holiday';
+            } else {
+                indicator.textContent = isWeekend ? '📋 Weekday (Viewing)' : '📋 WEEKDAY — LIVE';
+            }
         } else {
             indicator.className = 'tab-indicator weekend';
             indicator.textContent = isWeekend ? '🌙 WEEKEND — LIVE' : '🌙 Weekend (Viewing)';
@@ -418,6 +488,105 @@ function goToCurrentWeek() {
 }
 window.goToCurrentWeek = goToCurrentWeek;
 
+/* ===== BANK HOLIDAYS RENDERING ===== */
+
+function renderHolidays() {
+    const tbody = document.getElementById('holidayTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const todayStr = formatDate(new Date());
+    const regionKeys = getRegionKeys();
+    const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    let filtered = HOLIDAYS;
+    if (holidayFilter !== 'all') {
+        filtered = HOLIDAYS.filter(h => h.region === holidayFilter || h.region === 'ALL');
+    }
+
+    let upcomingCount = 0;
+    let pastCount = 0;
+
+    filtered.forEach(h => {
+        const d = new Date(h.date + 'T00:00:00');
+        const dayName = DAYS[d.getDay()];
+        const isWeekendDay = d.getDay() === 0 || d.getDay() === 6;
+        const isPast = h.date < todayStr;
+        const isToday = h.date === todayStr;
+        if (isPast) pastCount++;
+        else upcomingCount++;
+
+        // Determine which regions are affected
+        const affectedRegions = h.region === 'ALL' ? regionKeys : [h.region];
+        const regionBadges = affectedRegions.map(rk => {
+            const rr = REGIONS[rk];
+            if (!rr) return '';
+            const bc = rr.color === 'orange' ? 'badge-india' : rr.color === 'blue' ? 'badge-uk' : 'badge-usa';
+            const dn = rk === 'USA_EST' ? 'USA' : rk;
+            return `<span class="badge ${bc}">${rr.flag} ${dn}</span>`;
+        }).join(' ');
+
+        // Get on-call pair for that date (uses weekend shift since holidays = extended coverage)
+        const weekNum = Math.floor((d.getTime() - ROTATION_ANCHOR.getTime()) / (7*24*60*60*1000));
+        const oncallHtml = affectedRegions.map(rk => {
+            const pair = getOnCallPair(rk, weekNum);
+            const rr = REGIONS[rk];
+            if (!rr) return '';
+            return `<span style="font-size:11px;">${rr.flag} ${pair.primary?.name || 'TBD'} / ${pair.backup?.name || 'TBD'}</span>`;
+        }).join('<br>');
+
+        const coverageText = (SETTINGS.holidays?.treatAsWeekend)
+            ? '<span class="badge badge-holiday">Extended Shift</span>'
+            : '<span class="badge" style="background:rgba(63,185,80,0.15);color:var(--accent-green);">Normal Shift</span>';
+
+        const row = document.createElement('tr');
+        row.className = isPast ? 'holiday-row-past' : isToday ? 'holiday-row-today' : 'holiday-row-upcoming';
+        row.innerHTML = `
+            <td style="font-family:monospace;white-space:nowrap;">${h.date}${isToday ? ' <span class="badge badge-holiday">TODAY</span>' : ''}</td>
+            <td><span class="holiday-day-badge ${isWeekendDay ? 'weekend' : 'weekday'}">${dayName}</span></td>
+            <td><strong>${h.name}</strong></td>
+            <td>${h.region === 'ALL' ? '<span class="badge badge-all">🌍 All Regions</span>' : regionBadges}</td>
+            <td style="font-size:12px;color:var(--text-secondary);">${h.type}</td>
+            <td>${coverageText}</td>
+            <td>${oncallHtml}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    // Info bar
+    const infoBar = document.getElementById('holidayInfoBar');
+    if (infoBar) {
+        const todayHols = isTodayHoliday();
+        if (todayHols.length > 0) {
+            infoBar.innerHTML = `🏖️ <strong>Today is a Bank Holiday:</strong> ${todayHols.map(h => h.name).join(', ')} — Extended weekend shifts are active`;
+            infoBar.style.background = 'rgba(248,81,73,0.12)';
+            infoBar.style.color = 'var(--accent-red)';
+        } else {
+            infoBar.innerHTML = `📊 ${upcomingCount} upcoming holidays · ${pastCount} past | Bank holidays use extended (weekend) shifts for coverage`;
+            infoBar.style.background = '';
+            infoBar.style.color = '';
+        }
+    }
+
+    // Summary counts
+    const indiaCount = HOLIDAYS.filter(h => h.region === 'India' || h.region === 'ALL').length;
+    const ukCount    = HOLIDAYS.filter(h => h.region === 'UK' || h.region === 'ALL').length;
+    const usaCount   = HOLIDAYS.filter(h => h.region === 'USA_EST' || h.region === 'ALL').length;
+    const el1 = document.getElementById('holidayCountIndia'); if (el1) el1.textContent = indiaCount;
+    const el2 = document.getElementById('holidayCountUK');    if (el2) el2.textContent = ukCount;
+    const el3 = document.getElementById('holidayCountUSA');   if (el3) el3.textContent = usaCount;
+    const el4 = document.getElementById('holidayCountAll');   if (el4) el4.textContent = HOLIDAYS.length;
+}
+
+function filterHolidays(region) {
+    holidayFilter = region;
+    document.querySelectorAll('.holiday-filter').forEach(btn => {
+        btn.className = 'holiday-filter' + (btn.dataset.filter === region ? ' active' : '');
+    });
+    renderHolidays();
+}
+window.filterHolidays = filterHolidays;
+
 /* ===== ERROR DISPLAY ===== */
 
 function showError(msg) {
@@ -432,9 +601,18 @@ function showError(msg) {
 async function init() {
     try {
         await loadSettings();
-        await loadRoster();
+        await Promise.all([loadRoster(), loadHolidays()]);
 
-        if (isTodayWeekend()) {
+        // Auto-detect: bank holiday > weekend > weekday
+        const todayHols = isTodayHoliday();
+        if (todayHols.length > 0 && SETTINGS.holidays?.treatAsWeekend) {
+            currentMode = 'weekend'; // holidays use weekend/extended shifts
+            document.getElementById('tabWeekday').className = 'tab-btn';
+            document.getElementById('tabWeekend').className = 'tab-btn';
+            document.getElementById('tabHoliday').className = 'tab-btn active';
+            const holidaySection = document.getElementById('holidaySection');
+            if (holidaySection) holidaySection.style.display = 'block';
+        } else if (isTodayWeekend()) {
             currentMode = 'weekend';
             document.getElementById('tabWeekday').className = 'tab-btn';
             document.getElementById('tabWeekend').className = 'tab-btn active';
@@ -442,6 +620,9 @@ async function init() {
 
         displayWeekOffset = getWeekNumber(new Date());
         renderAll();
+        if (document.getElementById('holidaySection')?.style.display !== 'none') {
+            renderHolidays();
+        }
 
         // Hide loading overlay
         const overlay = document.getElementById('loadingOverlay');

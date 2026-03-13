@@ -66,6 +66,13 @@
         ]
     },
 
+    "holidays": {
+        "csvFile": "config/bank-holidays.csv",
+        "treatAsWeekend": true,
+        "lookAheadDays": 90,
+        "note": "Bank holidays use weekend/extended shifts for coverage"
+    },
+
     "refreshIntervalMs": 60000,
     "clockIntervalMs": 1000
 }

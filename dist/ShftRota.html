@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShftRota — On-Call Dashboard</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📞</text></svg>">
     <style>
 /* ===================================================================
    ShftRota — Follow-the-Sun On-Call Dashboard
@@ -69,9 +68,11 @@ body {
 .tab-btn .tab-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
 .tab-btn .tab-badge.wd { background: rgba(63,185,80,0.15); color: var(--accent-green); }
 .tab-btn .tab-badge.we { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+.tab-btn .tab-badge.bh { background: rgba(248,81,73,0.15); color: var(--accent-red); }
 .tab-indicator { font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: 700; margin-left: auto; align-self: center; }
 .tab-indicator.weekday { background: rgba(63,185,80,0.15); color: var(--accent-green); }
 .tab-indicator.weekend { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+.tab-indicator.holiday { background: rgba(248,81,73,0.15); color: var(--accent-red); }
 
 /* ===== Layout ===== */
 .container { max-width: 1500px; margin: 0 auto; padding: 20px; }
@@ -250,11 +251,86 @@ td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
 @media (max-width: 600px) {
     .stats-row { grid-template-columns: repeat(2, 1fr); }
     .tab-btn { padding: 10px 14px; font-size: 12px; }
+    .holiday-summary { grid-template-columns: repeat(2, 1fr); }
+    .holiday-filters { flex-wrap: wrap; }
 }
 
+/* ===== Bank Holiday Panel ===== */
+.holiday-section { margin-bottom: 24px; }
+.holiday-panel {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; margin-bottom: 16px;
+}
+.holiday-panel-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px;
+}
+.holiday-panel-header h3 { font-size: 14px; font-weight: 600; }
+.holiday-filters { display: flex; gap: 6px; }
+.holiday-filter {
+    background: var(--bg-primary); border: 1px solid var(--border);
+    color: var(--text-secondary); padding: 5px 14px; border-radius: 20px;
+    cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;
+}
+.holiday-filter:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+.holiday-filter.active { background: var(--accent-red); color: #fff; border-color: var(--accent-red); }
+.holiday-info-bar {
+    padding: 10px 20px; background: rgba(248,81,73,0.06);
+    font-size: 12px; color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+}
+.holiday-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.holiday-table th {
+    background: var(--bg-secondary); padding: 10px 14px; text-align: left;
+    font-weight: 600; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-secondary);
+}
+.holiday-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.holiday-row-past { opacity: 0.4; }
+.holiday-row-today { background: rgba(248,81,73,0.1); border-left: 3px solid var(--accent-red); }
+.holiday-row-upcoming { opacity: 1; }
+.badge-holiday { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+.badge-all { background: rgba(57,210,192,0.15); color: var(--accent-cyan); }
+.holiday-day-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+}
+.holiday-day-badge.weekday { background: rgba(63,185,80,0.12); color: var(--accent-green); }
+.holiday-day-badge.weekend { background: rgba(188,140,255,0.12); color: var(--accent-purple); }
+
+/* Holiday Summary Cards */
+.holiday-summary {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+}
+.holiday-summary-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px; text-align: center;
+    transition: border-color 0.2s;
+}
+.holiday-summary-card:hover { border-color: var(--accent-cyan); }
+.holiday-summary-card.india { border-top: 3px solid var(--accent-orange); }
+.holiday-summary-card.uk    { border-top: 3px solid var(--accent-blue); }
+.holiday-summary-card.usa   { border-top: 3px solid var(--accent-purple); }
+.holiday-summary-card.all   { border-top: 3px solid var(--accent-cyan); }
+.holiday-summary-flag { font-size: 28px; margin-bottom: 6px; }
+.holiday-summary-count { font-size: 32px; font-weight: 700; }
+.holiday-summary-card.india .holiday-summary-count { color: var(--accent-orange); }
+.holiday-summary-card.uk    .holiday-summary-count { color: var(--accent-blue); }
+.holiday-summary-card.usa   .holiday-summary-count { color: var(--accent-purple); }
+.holiday-summary-card.all   .holiday-summary-count { color: var(--accent-cyan); }
+.holiday-summary-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
     </style>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📞</text></svg>">
 </head>
 <body>
+
+    <!-- ===== LOADING OVERLAY ===== -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Initializing…</div>
+    </div>
 
     <!-- ===== HEADER ===== -->
     <div class="header">
@@ -266,7 +342,7 @@ td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
             </div>
         </div>
         <div class="meta">
-            Follow-the-Sun Coverage | 20 Engineers | 3 Regions | Escalation: 15 min | Auto-refreshes every 60s
+            Follow-the-Sun Coverage | Loading…
         </div>
     </div>
 
@@ -278,9 +354,15 @@ td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
         <button class="tab-btn" onclick="switchTab('weekend')" id="tabWeekend">
             🌙 Weekend <span class="tab-badge we">Sat – Sun</span>
         </button>
+        <button class="tab-btn" onclick="switchTab('holiday')" id="tabHoliday">
+            🏖️ Bank Holidays <span class="tab-badge bh" id="holidayCount">—</span>
+        </button>
     </div>
 
     <div class="container">
+
+        <!-- ===== CONFIG ERROR ===== -->
+        <div class="config-error" id="configError"></div>
 
         <!-- ===== STATS ROW ===== -->
         <div class="stats-row">
@@ -346,23 +428,76 @@ td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
             <div id="handoffLog"></div>
         </div>
 
+        <!-- ===== BANK HOLIDAYS ===== -->
+        <div class="holiday-section" id="holidaySection" style="display:none;">
+            <div class="holiday-panel">
+                <div class="holiday-panel-header">
+                    <h3>🏖️ Bank Holidays Calendar</h3>
+                    <div class="holiday-filters">
+                        <button class="holiday-filter active" onclick="filterHolidays('all')" data-filter="all">All</button>
+                        <button class="holiday-filter" onclick="filterHolidays('India')" data-filter="India">🇮🇳 India</button>
+                        <button class="holiday-filter" onclick="filterHolidays('UK')" data-filter="UK">🇬🇧 UK</button>
+                        <button class="holiday-filter" onclick="filterHolidays('USA_EST')" data-filter="USA_EST">🇺🇸 USA</button>
+                    </div>
+                </div>
+                <div class="holiday-info-bar" id="holidayInfoBar"></div>
+                <table class="holiday-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Day</th>
+                            <th>Holiday</th>
+                            <th>Region</th>
+                            <th>Type</th>
+                            <th>Coverage</th>
+                            <th>On-Call (Extended)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="holidayTableBody"></tbody>
+                </table>
+            </div>
+            <div class="holiday-summary">
+                <div class="holiday-summary-card india">
+                    <div class="holiday-summary-flag">🇮🇳</div>
+                    <div class="holiday-summary-count" id="holidayCountIndia">0</div>
+                    <div class="holiday-summary-label">India Holidays</div>
+                </div>
+                <div class="holiday-summary-card uk">
+                    <div class="holiday-summary-flag">🇬🇧</div>
+                    <div class="holiday-summary-count" id="holidayCountUK">0</div>
+                    <div class="holiday-summary-label">UK Bank Holidays</div>
+                </div>
+                <div class="holiday-summary-card usa">
+                    <div class="holiday-summary-flag">🇺🇸</div>
+                    <div class="holiday-summary-count" id="holidayCountUSA">0</div>
+                    <div class="holiday-summary-label">USA Federal Holidays</div>
+                </div>
+                <div class="holiday-summary-card all">
+                    <div class="holiday-summary-flag">🌍</div>
+                    <div class="holiday-summary-count" id="holidayCountAll">0</div>
+                    <div class="holiday-summary-label">Total Holidays</div>
+                </div>
+            </div>
+        </div>
+
         <!-- ===== TEAM ROSTER ===== -->
         <div class="roster-section">
-            <div class="roster-header">👥 Team Roster (20 Engineers)</div>
+            <div class="roster-header">👥 Team Roster</div>
             <div class="roster-grid" id="rosterGrid"></div>
         </div>
 
     </div>
 
     <div class="footer">
-        ShftRota v2.0 — Follow-the-Sun On-Call Dashboard |
+        ShftRota v2.1 (standalone, built 2026-03-13 18:41) — Follow-the-Sun On-Call Dashboard |
         Escalation: Primary → 15 min → Backup → 15 min → Team Lead |
-        Auto-refresh: 60s | Built: 2026-03-13 17:39
+        Auto-refresh: 60s
     </div>
 
     <script>
-        /* ===== EMBEDDED CONFIG (generated by Build-Dashboard.ps1) ===== */
-        const TEAM = [
+
+        /* ===== EMBEDDED CONFIG (generated by Build-Dashboard.ps1 on 2026-03-13 18:41) ===== */
+        const EMBEDDED_TEAM = [
             { name: "Ravi Kumar", initials: "RK", email: "ravi.kumar@corp.com", phone: "+91-98765-43210", region: "India", shift: "05:30-13:30" },
             { name: "Priya Sharma", initials: "PS", email: "priya.sharma@corp.com", phone: "+91-98765-43211", region: "India", shift: "05:30-13:30" },
             { name: "Amit Patel", initials: "AP", email: "amit.patel@corp.com", phone: "+91-98765-43212", region: "India", shift: "05:30-13:30" },
@@ -384,8 +519,7 @@ td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
             { name: "David Chen", initials: "DC", email: "david.chen@corp.com", phone: "+1-212-555-1205", region: "USA_EST", shift: "13:00-21:00" },
             { name: "Nicole Taylor", initials: "NT", email: "nicole.taylor@corp.com", phone: "+1-212-555-1206", region: "USA_EST", shift: "13:00-21:00" }
         ];
-
-        const SETTINGS = {
+        const EMBEDDED_SETTINGS = {
     "appName": "ShftRota",
     "version": "2.0",
     "description": "Follow-the-Sun On-Call Rota Dashboard",
@@ -453,288 +587,686 @@ td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
         ]
     },
 
+    "holidays": {
+        "csvFile": "config/bank-holidays.csv",
+        "treatAsWeekend": true,
+        "lookAheadDays": 90,
+        "note": "Bank holidays use weekend/extended shifts for coverage"
+    },
+
     "refreshIntervalMs": 60000,
     "clockIntervalMs": 1000
 }
 ;
+        const EMBEDDED_HOLIDAYS = [
+            { date: "2026-01-01", name: "New Year\'s Day", region: "ALL", type: "Public Holiday" },
+            { date: "2026-01-26", name: "Republic Day", region: "India", type: "National Holiday" },
+            { date: "2026-03-10", name: "Maha Shivaratri", region: "India", type: "Gazetted Holiday" },
+            { date: "2026-03-31", name: "Holi", region: "India", type: "Gazetted Holiday" },
+            { date: "2026-04-03", name: "Good Friday", region: "ALL", type: "Public Holiday" },
+            { date: "2026-04-06", name: "Easter Monday", region: "UK", type: "Bank Holiday" },
+            { date: "2026-04-14", name: "Ambedkar Jayanti", region: "India", type: "Gazetted Holiday" },
+            { date: "2026-05-01", name: "May Day / Labour Day", region: "India", type: "Gazetted Holiday" },
+            { date: "2026-05-04", name: "Early May Bank Holiday", region: "UK", type: "Bank Holiday" },
+            { date: "2026-05-25", name: "Memorial Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2026-05-25", name: "Spring Bank Holiday", region: "UK", type: "Bank Holiday" },
+            { date: "2026-06-19", name: "Juneteenth", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2026-07-04", name: "Independence Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2026-07-07", name: "Rath Yatra", region: "India", type: "Gazetted Holiday" },
+            { date: "2026-08-15", name: "Independence Day", region: "India", type: "National Holiday" },
+            { date: "2026-08-31", name: "Summer Bank Holiday", region: "UK", type: "Bank Holiday" },
+            { date: "2026-09-07", name: "Labor Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2026-10-02", name: "Gandhi Jayanti", region: "India", type: "National Holiday" },
+            { date: "2026-10-12", name: "Columbus Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2026-10-20", name: "Dussehra", region: "India", type: "Gazetted Holiday" },
+            { date: "2026-11-09", name: "Diwali", region: "India", type: "Gazetted Holiday" },
+            { date: "2026-11-11", name: "Veterans Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2026-11-12", name: "Guru Nanak Jayanti", region: "India", type: "Gazetted Holiday" },
+            { date: "2026-11-26", name: "Thanksgiving Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2026-12-25", name: "Christmas Day", region: "ALL", type: "Public Holiday" },
+            { date: "2026-12-26", name: "Boxing Day", region: "UK", type: "Bank Holiday" },
+            { date: "2026-12-28", name: "Boxing Day (observed)", region: "UK", type: "Bank Holiday" },
+            { date: "2027-01-01", name: "New Year\'s Day", region: "ALL", type: "Public Holiday" },
+            { date: "2027-01-18", name: "Martin Luther King Jr. Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2027-01-26", name: "Republic Day", region: "India", type: "National Holiday" },
+            { date: "2027-02-16", name: "Presidents\' Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2027-03-17", name: "Holi", region: "India", type: "Gazetted Holiday" },
+            { date: "2027-04-02", name: "Good Friday", region: "ALL", type: "Public Holiday" },
+            { date: "2027-04-05", name: "Easter Monday", region: "UK", type: "Bank Holiday" },
+            { date: "2027-05-03", name: "Early May Bank Holiday", region: "UK", type: "Bank Holiday" },
+            { date: "2027-05-25", name: "Spring Bank Holiday", region: "UK", type: "Bank Holiday" },
+            { date: "2027-05-31", name: "Memorial Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2027-06-18", name: "Juneteenth (observed)", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2027-07-05", name: "Independence Day (observed)", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2027-08-15", name: "Independence Day", region: "India", type: "National Holiday" },
+            { date: "2027-08-30", name: "Summer Bank Holiday", region: "UK", type: "Bank Holiday" },
+            { date: "2027-09-06", name: "Labor Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2027-10-02", name: "Gandhi Jayanti", region: "India", type: "National Holiday" },
+            { date: "2027-10-11", name: "Columbus Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2027-10-11", name: "Dussehra", region: "India", type: "Gazetted Holiday" },
+            { date: "2027-10-29", name: "Diwali", region: "India", type: "Gazetted Holiday" },
+            { date: "2027-11-11", name: "Veterans Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2027-11-25", name: "Thanksgiving Day", region: "USA_EST", type: "Federal Holiday" },
+            { date: "2027-12-25", name: "Christmas Day", region: "ALL", type: "Public Holiday" },
+            { date: "2027-12-27", name: "Boxing Day (observed)", region: "UK", type: "Bank Holiday" }
+        ];
 
-        /* ===== DERIVED CONFIG ===== */
-        const REGIONS = {};
-        const WEEKEND_REGIONS = {};
-        SETTINGS.regions.forEach(function(r) {
-            REGIONS[r.key] = {
-                flag: r.flag, color: r.color,
-                shiftStart: r.weekday.startUTC, shiftEnd: r.weekday.endUTC,
-                tz: r.timezone, tzLabel: r.tzLabel, utcOffset: r.utcOffset
-            };
-            WEEKEND_REGIONS[r.key] = {
-                flag: r.flag, color: r.color,
-                shiftStart: r.weekend.startUTC, shiftEnd: r.weekend.endUTC,
-                tz: r.timezone, tzLabel: r.tzLabel, utcOffset: r.utcOffset,
-                shiftLabel: r.weekend.label
-            };
+/* ===================================================================
+   ShftRota — Follow-the-Sun On-Call Dashboard
+   Application Logic v2.0
+   Loads config from: config/settings.json + config/team-roster.csv
+   =================================================================== */
+
+'use strict';
+
+/* ===== GLOBAL STATE ===== */
+let TEAM          = [];
+let HOLIDAYS      = [];
+let SETTINGS      = {};
+let REGIONS       = {};
+let WEEKEND_REGIONS = {};
+let ESCALATION_MINUTES = 15;
+let ROTATION_ANCHOR;
+let currentMode   = 'weekday';
+let currentWeekOffset = 0;
+let displayWeekOffset = 0;
+let holidayFilter = 'all';
+
+/* ===== CONFIG LOADER ===== */
+
+async function loadSettings() {
+    SETTINGS = EMBEDDED_SETTINGS;
+    ESCALATION_MINUTES = SETTINGS.escalation?.minutes ?? 15;
+    ROTATION_ANCHOR    = new Date(SETTINGS.rotation?.anchorDate ?? '2026-03-02T00:00:00Z');
+    REGIONS = {};
+    WEEKEND_REGIONS = {};
+    (SETTINGS.regions || []).forEach(r => {
+        REGIONS[r.key] = {
+            flag: r.flag, color: r.color,
+            shiftStart: r.weekday.startUTC, shiftEnd: r.weekday.endUTC,
+            tz: r.timezone, tzLabel: r.tzLabel, utcOffset: r.utcOffset
+        };
+        WEEKEND_REGIONS[r.key] = {
+            flag: r.flag, color: r.color,
+            shiftStart: r.weekend.startUTC, shiftEnd: r.weekend.endUTC,
+            tz: r.timezone, tzLabel: r.tzLabel, utcOffset: r.utcOffset,
+            shiftLabel: r.weekend.label
+        };
+    });
+}
+
+function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    return lines.slice(1).filter(l => l.trim()).map(line => {
+        const vals = line.split(',').map(v => v.trim());
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = vals[i] || '');
+        return obj;
+    });
+}
+
+async function loadRoster() {
+    TEAM = EMBEDDED_TEAM;
+    const rosterHeader = document.querySelector('.roster-header');
+    if (rosterHeader) rosterHeader.textContent = String.fromCodePoint(0x1F465) + ' Team Roster (' + TEAM.length + ' Engineers)';
+    const meta = document.querySelector('.header .meta');
+    if (meta) {
+        const regionCount = [...new Set(TEAM.map(t => t.region))].length;
+        meta.textContent = 'Follow-the-Sun Coverage | ' + TEAM.length + ' Engineers | ' + regionCount + ' Regions | Escalation: ' + ESCALATION_MINUTES + ' min | Auto-refreshes every 60s';
+    }
+}
+
+async function loadHolidays() {
+    HOLIDAYS = EMBEDDED_HOLIDAYS.sort((a, b) => a.date.localeCompare(b.date));
+    const badge = document.getElementById('holidayCount');
+    if (badge) badge.textContent = HOLIDAYS.length;
+}
+
+function isTodayHoliday() {
+    const todayStr = formatDate(new Date());
+    return HOLIDAYS.filter(h =>
+        h.date === todayStr && (h.region === 'ALL' || getRegionKeys().includes(h.region))
+    );
+}
+
+function isDateHoliday(dateStr, region) {
+    return HOLIDAYS.some(h =>
+        h.date === dateStr && (h.region === 'ALL' || h.region === region)
+    );
+}
+
+function getHolidaysForRegion(region) {
+    return HOLIDAYS.filter(h => h.region === 'ALL' || h.region === region);
+}
+
+/* ===== HELPER FUNCTIONS ===== */
+
+function getActiveRegions() {
+    return currentMode === 'weekend' ? WEEKEND_REGIONS : REGIONS;
+}
+
+function getRegionKeys() {
+    return Object.keys(REGIONS);
+}
+
+function getWeekNumber(date) {
+    const diff = date.getTime() - ROTATION_ANCHOR.getTime();
+    return Math.floor(diff / (7 * 24 * 60 * 60 * 1000));
+}
+
+function getWeekStart(weekOffset) {
+    return new Date(ROTATION_ANCHOR.getTime() + weekOffset * 7 * 24 * 60 * 60 * 1000);
+}
+
+function getOnCallPair(region, weekOffset) {
+    const members = TEAM.filter(t => t.region === region);
+    if (members.length < 2) return { primary: members[0] || {}, backup: members[1] || members[0] || {} };
+    const pairs = Math.floor(members.length / 2);
+    const adj = currentMode === 'weekend' ? weekOffset + 1 : weekOffset;
+    const pairIdx = ((adj % pairs) + pairs) % pairs;
+    return {
+        primary: members[pairIdx * 2],
+        backup:  members[pairIdx * 2 + 1]
+    };
+}
+
+function isRegionActive(region) {
+    const now = new Date();
+    const utcH = now.getUTCHours() + now.getUTCMinutes() / 60;
+    const regs = getActiveRegions();
+    const r = regs[region];
+    if (!r) return false;
+    if (r.shiftEnd > 24) return utcH >= r.shiftStart || utcH < (r.shiftEnd - 24);
+    return utcH >= r.shiftStart && utcH < r.shiftEnd;
+}
+
+function isTodayWeekend() {
+    const day = new Date().getUTCDay();
+    return day === 0 || day === 6;
+}
+
+function isTodayWeekendOrHoliday() {
+    if (isTodayWeekend()) return true;
+    if (SETTINGS.holidays?.treatAsWeekend && isTodayHoliday().length > 0) return true;
+    return false;
+}
+
+function getLocalTime(tz) {
+    try {
+        return new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch { return '--:--:--'; }
+}
+
+function formatDate(d) {
+    return d.toISOString().slice(0, 10);
+}
+
+/* ===== TAB SWITCHING ===== */
+
+function switchTab(mode) {
+    currentMode = mode === 'holiday' ? 'weekend' : mode; // holidays use weekend shifts
+    document.getElementById('tabWeekday').className = 'tab-btn' + (mode === 'weekday' ? ' active' : '');
+    document.getElementById('tabWeekend').className = 'tab-btn' + (mode === 'weekend' ? ' active' : '');
+    document.getElementById('tabHoliday').className = 'tab-btn' + (mode === 'holiday' ? ' active' : '');
+
+    // Show/hide holiday panel
+    const holidaySection = document.getElementById('holidaySection');
+    if (holidaySection) holidaySection.style.display = mode === 'holiday' ? 'block' : 'none';
+
+    if (mode === 'holiday') {
+        renderHolidays();
+    }
+    renderAll();
+}
+// Expose to global for onclick handlers
+window.switchTab = switchTab;
+
+/* ===== RENDER ===== */
+
+function renderAll() {
+    const now = new Date();
+    currentWeekOffset = getWeekNumber(now);
+    displayWeekOffset = currentWeekOffset;
+    updateClock();
+    renderOnCallCards();
+    renderSunBar();
+    renderSchedule(currentWeekOffset);
+    renderRoster();
+    renderHandoffLog();
+    updateStats();
+    // Update section titles
+    const sunTitle = document.getElementById('sunTitle');
+    const schedTitle = document.getElementById('scheduleTitle');
+    if (sunTitle) sunTitle.textContent = currentMode === 'weekend'
+        ? '🌙 Follow-the-Sun — Weekend Extended Shifts (UTC)'
+        : '☀️ Follow-the-Sun — 24h UTC Coverage';
+    if (schedTitle) schedTitle.textContent = currentMode === 'weekend'
+        ? '📅 Weekend Rotation Schedule (Sat–Sun)'
+        : '📅 Weekday Rotation Schedule (Mon–Fri)';
+}
+
+function updateClock() {
+    const el = document.getElementById('utcClock');
+    if (el) el.textContent = new Date().toLocaleTimeString('en-GB', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' UTC';
+}
+
+function renderOnCallCards() {
+    const weekOff = getWeekNumber(new Date());
+    const container = document.getElementById('oncallCards');
+    if (!container) return;
+    container.innerHTML = '';
+    const regs = getActiveRegions();
+    getRegionKeys().forEach(region => {
+        const r = regs[region];
+        if (!r) return;
+        const pair = getOnCallPair(region, weekOff);
+        const active = isRegionActive(region);
+        const localTime = getLocalTime(r.tz);
+        const displayName = region === 'USA_EST' ? 'USA (EST)' : region;
+        const shiftText = currentMode === 'weekend' ? (r.shiftLabel || '') : (pair.primary?.shift || '');
+        const colorClass = r.color === 'orange' ? 'india' : r.color === 'blue' ? 'uk' : 'usa';
+        const card = document.createElement('div');
+        card.className = 'region-card' + (active ? ' active' : '');
+        card.innerHTML = `
+            <div class="region-name ${colorClass}">${r.flag} ${displayName}</div>
+            <div class="region-shift">Shift: ${shiftText} UTC ${currentMode === 'weekend' ? '(extended)' : ''}</div>
+            <div class="region-local">🕐 Local: ${localTime} ${r.tzLabel}</div>
+            <div class="oncall-person">
+                <div class="oncall-avatar primary">${pair.primary?.initials || '?'}</div>
+                <div class="oncall-detail">
+                    <div class="name">${pair.primary?.name || 'TBD'}</div>
+                    <div class="role">🟢 Primary</div>
+                    <div class="contact">📧 ${pair.primary?.email || ''} · 📱 ${pair.primary?.phone || ''}</div>
+                </div>
+            </div>
+            <div class="oncall-person">
+                <div class="oncall-avatar backup">${pair.backup?.initials || '?'}</div>
+                <div class="oncall-detail">
+                    <div class="name">${pair.backup?.name || 'TBD'}</div>
+                    <div class="role">🟡 Backup (${ESCALATION_MINUTES} min escalation)</div>
+                    <div class="contact">📧 ${pair.backup?.email || ''} · 📱 ${pair.backup?.phone || ''}</div>
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function renderSunBar() {
+    const now = new Date();
+    const utcH = now.getUTCHours() + now.getUTCMinutes() / 60;
+    const pct = (utcH / 24) * 100;
+    const nowLine = document.getElementById('sunNowLine');
+    if (nowLine) nowLine.style.left = pct + '%';
+
+    const segs = document.querySelectorAll('.sun-segment');
+    if (segs.length < 3) return;
+    const regs = getActiveRegions();
+    const keys = getRegionKeys();
+
+    keys.forEach((key, i) => {
+        if (!segs[i] || !regs[key]) return;
+        const r = regs[key];
+        const startPct = (r.shiftStart / 24) * 100;
+        const widthPct = ((r.shiftEnd - r.shiftStart) / 24) * 100;
+        const displayName = key === 'USA_EST' ? 'USA EST' : key;
+        const startH = String(Math.floor(r.shiftStart)).padStart(2, '0') + ':' + String(Math.round((r.shiftStart % 1) * 60)).padStart(2, '0');
+        const endRaw = r.shiftEnd > 24 ? r.shiftEnd - 24 : r.shiftEnd;
+        const endH = String(Math.floor(endRaw)).padStart(2, '0') + ':' + String(Math.round((endRaw % 1) * 60)).padStart(2, '0');
+        segs[i].style.left = startPct + '%';
+        segs[i].style.width = widthPct + '%';
+        segs[i].textContent = `${r.flag} ${displayName} (${startH}–${endH} UTC)`;
+    });
+}
+
+function renderSchedule(centerWeek) {
+    const tbody = document.getElementById('scheduleBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const currentWeek = getWeekNumber(new Date());
+    const keys = getRegionKeys();
+    const regionCount = keys.length;
+
+    for (let w = centerWeek - 2; w <= centerWeek + 5; w++) {
+        const ws = getWeekStart(w);
+        const we = new Date(ws.getTime() + 6 * 24 * 60 * 60 * 1000);
+        const isCurrent = (w === currentWeek);
+        keys.forEach((region, ri) => {
+            const pair = getOnCallPair(region, w);
+            const regs = getActiveRegions();
+            const r = regs[region];
+            if (!r) return;
+            const displayRegion = region === 'USA_EST' ? 'USA EST' : region;
+            const badgeClass = r.color === 'orange' ? 'badge-india' : r.color === 'blue' ? 'badge-uk' : 'badge-usa';
+            const shiftText = currentMode === 'weekend' ? (r.shiftLabel || '') : (pair.primary?.shift || '');
+            const weekType = currentMode === 'weekend' ? 'Sat-Sun' : 'Mon-Fri';
+            const row = document.createElement('tr');
+            if (isCurrent) row.className = 'current-week';
+            row.innerHTML = `
+                ${ri === 0 ? `<td rowspan="${regionCount}" style="font-weight:600;white-space:nowrap;vertical-align:middle;">${formatDate(ws)}<br><span style="color:var(--text-secondary);font-size:11px;">to ${formatDate(we)}</span><br><span style="color:var(--text-secondary);font-size:10px;">${weekType}</span>${isCurrent ? '<br><span class="badge badge-primary" style="margin-top:4px;">THIS WEEK</span>' : ''}</td>` : ''}
+                <td><span class="badge ${badgeClass}">${r.flag} ${displayRegion}</span></td>
+                <td style="font-family:monospace;font-size:12px;">${shiftText}</td>
+                <td><strong>${pair.primary?.name || 'TBD'}</strong><br><span style="color:var(--text-secondary);font-size:11px;">${pair.primary?.phone || ''}</span></td>
+                <td>${pair.backup?.name || 'TBD'}<br><span style="color:var(--text-secondary);font-size:11px;">${pair.backup?.phone || ''}</span></td>
+                <td>${isCurrent && isRegionActive(region) ? '<span class="badge badge-primary">🟢 Active</span>' : isCurrent ? '<span class="badge" style="background:rgba(139,148,158,0.15);color:var(--text-secondary);">⚪ Off-shift</span>' : '<span style="color:var(--text-secondary);font-size:12px;">—</span>'}</td>
+            `;
+            tbody.appendChild(row);
         });
+    }
+    const ws = getWeekStart(centerWeek);
+    const we = new Date(ws.getTime() + 6 * 24 * 60 * 60 * 1000);
+    const weekLabel = document.getElementById('weekLabel');
+    if (weekLabel) weekLabel.textContent = formatDate(ws) + ' → ' + formatDate(we);
+}
 
-        const ESCALATION_MINUTES = SETTINGS.escalation.minutes || 15;
-        const ROTATION_ANCHOR = new Date(SETTINGS.rotation.anchorDate);
-        let currentMode = 'weekday';
-        let currentWeekOffset = 0;
-        let displayWeekOffset = 0;
+function renderRoster() {
+    const grid = document.getElementById('rosterGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const currentWeek = getWeekNumber(new Date());
+    const onCallNow = {};
+    getRegionKeys().forEach(region => {
+        const pair = getOnCallPair(region, currentWeek);
+        const active = isRegionActive(region);
+        if (active) {
+            if (pair.primary) onCallNow[pair.primary.name] = 'primary';
+            if (pair.backup)  onCallNow[pair.backup.name] = 'backup';
+        }
+    });
 
-        /* ===== HELPERS ===== */
-        function getActiveRegions() { return currentMode === 'weekend' ? WEEKEND_REGIONS : REGIONS; }
-        function getRegionKeys() { return Object.keys(REGIONS); }
-
-        function getWeekNumber(date) {
-            return Math.floor((date.getTime() - ROTATION_ANCHOR.getTime()) / (7*24*60*60*1000));
-        }
-        function getWeekStart(weekOffset) {
-            return new Date(ROTATION_ANCHOR.getTime() + weekOffset * 7*24*60*60*1000);
-        }
-        function getOnCallPair(region, weekOffset) {
-            var members = TEAM.filter(function(t) { return t.region === region; });
-            if (members.length < 2) return { primary: members[0]||{}, backup: members[1]||members[0]||{} };
-            var pairs = Math.floor(members.length / 2);
-            var adj = currentMode === 'weekend' ? weekOffset + 1 : weekOffset;
-            var pairIdx = ((adj % pairs) + pairs) % pairs;
-            return { primary: members[pairIdx*2], backup: members[pairIdx*2+1] };
-        }
-        function isRegionActive(region) {
-            var now = new Date();
-            var utcH = now.getUTCHours() + now.getUTCMinutes()/60;
-            var r = getActiveRegions()[region];
-            if (!r) return false;
-            if (r.shiftEnd > 24) return utcH >= r.shiftStart || utcH < (r.shiftEnd-24);
-            return utcH >= r.shiftStart && utcH < r.shiftEnd;
-        }
-        function isTodayWeekend() { var d = new Date().getUTCDay(); return d===0||d===6; }
-        function getLocalTime(tz) {
-            try { return new Date().toLocaleTimeString('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
-            catch(e) { return '--:--:--'; }
-        }
-        function formatDate(d) { return d.toISOString().slice(0,10); }
-
-        /* ===== TABS ===== */
-        function switchTab(mode) {
-            currentMode = mode;
-            document.getElementById('tabWeekday').className = 'tab-btn' + (mode==='weekday'?' active':'');
-            document.getElementById('tabWeekend').className = 'tab-btn' + (mode==='weekend'?' active':'');
-            renderAll();
-        }
-
-        /* ===== RENDER ===== */
-        function renderAll() {
-            var now = new Date();
-            currentWeekOffset = getWeekNumber(now);
-            displayWeekOffset = currentWeekOffset;
-            updateClock(); renderOnCallCards(); renderSunBar();
-            renderSchedule(currentWeekOffset); renderRoster(); renderHandoffLog(); updateStats();
-            document.getElementById('sunTitle').textContent = currentMode==='weekend'
-                ? '🌙 Follow-the-Sun — Weekend Extended Shifts (UTC)'
-                : '☀️ Follow-the-Sun — 24h UTC Coverage';
-            document.getElementById('scheduleTitle').textContent = currentMode==='weekend'
-                ? '📅 Weekend Rotation Schedule (Sat–Sun)'
-                : '📅 Weekday Rotation Schedule (Mon–Fri)';
-        }
-
-        function updateClock() {
-            document.getElementById('utcClock').textContent =
-                new Date().toLocaleTimeString('en-GB',{timeZone:'UTC',hour:'2-digit',minute:'2-digit',second:'2-digit'})+' UTC';
-        }
-
-        function renderOnCallCards() {
-            var weekOff = getWeekNumber(new Date());
-            var container = document.getElementById('oncallCards');
-            container.innerHTML = '';
-            var regs = getActiveRegions();
-            getRegionKeys().forEach(function(region) {
-                var r = regs[region]; if(!r) return;
-                var pair = getOnCallPair(region, weekOff);
-                var active = isRegionActive(region);
-                var localTime = getLocalTime(r.tz);
-                var displayName = region==='USA_EST'?'USA (EST)':region;
-                var shiftText = currentMode==='weekend'?(r.shiftLabel||''):(pair.primary.shift||'');
-                var colorClass = r.color==='orange'?'india':r.color==='blue'?'uk':'usa';
-                var card = document.createElement('div');
-                card.className = 'region-card'+(active?' active':'');
-                card.innerHTML =
-                    '<div class="region-name '+colorClass+'">'+r.flag+' '+displayName+'</div>'+
-                    '<div class="region-shift">Shift: '+shiftText+' UTC '+(currentMode==='weekend'?'(extended)':'')+'</div>'+
-                    '<div class="region-local">🕐 Local: '+localTime+' '+r.tzLabel+'</div>'+
-                    '<div class="oncall-person"><div class="oncall-avatar primary">'+(pair.primary.initials||'?')+'</div>'+
-                    '<div class="oncall-detail"><div class="name">'+(pair.primary.name||'TBD')+'</div>'+
-                    '<div class="role">🟢 Primary</div>'+
-                    '<div class="contact">📧 '+(pair.primary.email||'')+' · 📱 '+(pair.primary.phone||'')+'</div></div></div>'+
-                    '<div class="oncall-person"><div class="oncall-avatar backup">'+(pair.backup.initials||'?')+'</div>'+
-                    '<div class="oncall-detail"><div class="name">'+(pair.backup.name||'TBD')+'</div>'+
-                    '<div class="role">🟡 Backup ('+ESCALATION_MINUTES+' min escalation)</div>'+
-                    '<div class="contact">📧 '+(pair.backup.email||'')+' · 📱 '+(pair.backup.phone||'')+'</div></div></div>';
-                container.appendChild(card);
-            });
-        }
-
-        function renderSunBar() {
-            var now = new Date();
-            var utcH = now.getUTCHours()+now.getUTCMinutes()/60;
-            document.getElementById('sunNowLine').style.left = (utcH/24*100)+'%';
-            var segs = document.querySelectorAll('.sun-segment');
-            if(segs.length<3) return;
-            var regs = getActiveRegions();
-            var keys = getRegionKeys();
-            keys.forEach(function(key,i) {
-                if(!segs[i]||!regs[key]) return;
-                var r = regs[key];
-                var startPct = (r.shiftStart/24)*100;
-                var widthPct = ((r.shiftEnd-r.shiftStart)/24)*100;
-                var dn = key==='USA_EST'?'USA EST':key;
-                var sH = String(Math.floor(r.shiftStart)).padStart(2,'0')+':'+String(Math.round((r.shiftStart%1)*60)).padStart(2,'0');
-                var eRaw = r.shiftEnd>24?r.shiftEnd-24:r.shiftEnd;
-                var eH = String(Math.floor(eRaw)).padStart(2,'0')+':'+String(Math.round((eRaw%1)*60)).padStart(2,'0');
-                segs[i].style.left = startPct+'%';
-                segs[i].style.width = widthPct+'%';
-                segs[i].textContent = r.flag+' '+dn+' ('+sH+'–'+eH+' UTC)';
-            });
-        }
-
-        function renderSchedule(centerWeek) {
-            var tbody = document.getElementById('scheduleBody');
-            tbody.innerHTML = '';
-            var currentWeek = getWeekNumber(new Date());
-            var keys = getRegionKeys();
-            var rc = keys.length;
-            for (var w = centerWeek-2; w <= centerWeek+5; w++) {
-                var ws = getWeekStart(w);
-                var we = new Date(ws.getTime()+6*24*60*60*1000);
-                var isCurrent = (w===currentWeek);
-                keys.forEach(function(region, ri) {
-                    var pair = getOnCallPair(region,w);
-                    var regs = getActiveRegions();
-                    var r = regs[region]; if(!r) return;
-                    var dr = region==='USA_EST'?'USA EST':region;
-                    var bc = r.color==='orange'?'badge-india':r.color==='blue'?'badge-uk':'badge-usa';
-                    var st = currentMode==='weekend'?(r.shiftLabel||''):(pair.primary.shift||'');
-                    var wt = currentMode==='weekend'?'Sat-Sun':'Mon-Fri';
-                    var row = document.createElement('tr');
-                    if(isCurrent) row.className='current-week';
-                    row.innerHTML =
-                        (ri===0?'<td rowspan="'+rc+'" style="font-weight:600;white-space:nowrap;vertical-align:middle;">'+formatDate(ws)+'<br><span style="color:var(--text-secondary);font-size:11px;">to '+formatDate(we)+'</span><br><span style="color:var(--text-secondary);font-size:10px;">'+wt+'</span>'+(isCurrent?'<br><span class="badge badge-primary" style="margin-top:4px;">THIS WEEK</span>':'')+'</td>':'')+
-                        '<td><span class="badge '+bc+'">'+r.flag+' '+dr+'</span></td>'+
-                        '<td style="font-family:monospace;font-size:12px;">'+st+'</td>'+
-                        '<td><strong>'+(pair.primary.name||'TBD')+'</strong><br><span style="color:var(--text-secondary);font-size:11px;">'+(pair.primary.phone||'')+'</span></td>'+
-                        '<td>'+(pair.backup.name||'TBD')+'<br><span style="color:var(--text-secondary);font-size:11px;">'+(pair.backup.phone||'')+'</span></td>'+
-                        '<td>'+(isCurrent&&isRegionActive(region)?'<span class="badge badge-primary">🟢 Active</span>':isCurrent?'<span class="badge" style="background:rgba(139,148,158,0.15);color:var(--text-secondary);">⚪ Off-shift</span>':'<span style="color:var(--text-secondary);font-size:12px;">—</span>')+'</td>';
-                    tbody.appendChild(row);
-                });
+    TEAM.forEach(person => {
+        const regionMembers = TEAM.filter(t => t.region === person.region);
+        const pairs = Math.floor(regionMembers.length / 2);
+        let nextWeek = null;
+        for (let w = currentWeek; w < currentWeek + (pairs || 1) * 2; w++) {
+            const pair = getOnCallPair(person.region, w);
+            if (pair.primary?.name === person.name || pair.backup?.name === person.name) {
+                if (w > currentWeek || !nextWeek) { nextWeek = w; break; }
             }
-            var ws2 = getWeekStart(centerWeek);
-            var we2 = new Date(ws2.getTime()+6*24*60*60*1000);
-            document.getElementById('weekLabel').textContent = formatDate(ws2)+' → '+formatDate(we2);
         }
 
-        function renderRoster() {
-            var grid = document.getElementById('rosterGrid');
-            grid.innerHTML = '';
-            var cw = getWeekNumber(new Date());
-            var onCallNow = {};
-            getRegionKeys().forEach(function(region) {
-                var pair = getOnCallPair(region,cw);
-                if(isRegionActive(region)) {
-                    if(pair.primary) onCallNow[pair.primary.name]='primary';
-                    if(pair.backup) onCallNow[pair.backup.name]='backup';
-                }
-            });
-            TEAM.forEach(function(person) {
-                var rm = TEAM.filter(function(t){return t.region===person.region;});
-                var pairs = Math.floor(rm.length/2);
-                var nextWeek = null;
-                for(var w=cw;w<cw+(pairs||1)*2;w++) {
-                    var pair=getOnCallPair(person.region,w);
-                    if((pair.primary&&pair.primary.name===person.name)||(pair.backup&&pair.backup.name===person.name)){
-                        if(w>cw||!nextWeek){nextWeek=w;break;}
-                    }
-                }
-                var regs = getActiveRegions();
-                var r = regs[person.region]; if(!r) return;
-                var duty = onCallNow[person.name];
-                var bc = r.color==='orange'?'badge-india':r.color==='blue'?'badge-uk':'badge-usa';
-                var dr = person.region==='USA_EST'?'USA EST':person.region;
-                var card = document.createElement('div');
-                card.className = 'roster-card'+(duty?' on-duty':'');
-                card.innerHTML =
-                    '<div class="roster-avatar" style="background:var(--accent-'+r.color+');">'+person.initials+'</div>'+
-                    '<div class="roster-info">'+
-                    '<div class="name">'+person.name+' '+(duty?'<span class="on-duty-badge">'+(duty==='primary'?'🟢 PRIMARY':'🟡 BACKUP')+'</span>':'')+'</div>'+
-                    '<div class="detail"><span class="badge '+bc+'">'+r.flag+' '+dr+'</span> · '+person.phone+'</div>'+
-                    '<div class="next-oncall">Next on-call: Week of '+formatDate(getWeekStart(nextWeek||cw))+'</div></div>';
-                grid.appendChild(card);
-            });
-        }
+        const regs = getActiveRegions();
+        const r = regs[person.region];
+        if (!r) return;
+        const duty = onCallNow[person.name];
+        const badgeClass = r.color === 'orange' ? 'badge-india' : r.color === 'blue' ? 'badge-uk' : 'badge-usa';
+        const displayRegion = person.region === 'USA_EST' ? 'USA EST' : person.region;
 
-        function renderHandoffLog() {
-            var log = document.getElementById('handoffLog');
-            var now = new Date();
-            var todayStr = formatDate(now);
-            var handoffs = currentMode==='weekend' ? SETTINGS.handoffs.weekend : SETTINGS.handoffs.weekday;
-            var cw = getWeekNumber(now);
-            log.innerHTML = handoffs.map(function(h) {
-                var fp = getOnCallPair(h.from,cw);
-                var tp = getOnCallPair(h.to,cw);
-                var fr = REGIONS[h.from]||{};
-                var tr = REGIONS[h.to]||{};
-                var fn = h.from==='USA_EST'?'USA':h.from;
-                var tn = h.to==='USA_EST'?'USA':h.to;
-                var isPast = false;
-                try { isPast = now > new Date(todayStr+'T'+h.utcTime+':00Z'); } catch(e){}
-                return '<div class="handoff-item" style="'+(isPast?'opacity:0.5;':'')+'">'+
-                    '<div class="handoff-time">'+todayStr+' '+h.utcTime+' UTC '+(isPast?'✅':'⏳')+'</div>'+
-                    '<div class="handoff-arrow">→</div>'+
-                    '<div class="handoff-detail">'+(fr.flag||'')+' <strong>'+fn+'</strong> ('+((fp.primary||{}).name||'TBD')+')'+
-                    ' &nbsp;→&nbsp; '+(tr.flag||'')+' <strong>'+tn+'</strong> ('+((tp.primary||{}).name||'TBD')+')'+
-                    '<br><span style="color:var(--text-secondary);font-size:11px;">'+(h.note||'')+'</span></div></div>';
-            }).join('');
-        }
+        const card = document.createElement('div');
+        card.className = 'roster-card' + (duty ? ' on-duty' : '');
+        card.innerHTML = `
+            <div class="roster-avatar" style="background:var(--accent-${r.color});">${person.initials}</div>
+            <div class="roster-info">
+                <div class="name">${person.name} ${duty ? '<span class="on-duty-badge">' + (duty === 'primary' ? '🟢 PRIMARY' : '🟡 BACKUP') + '</span>' : ''}</div>
+                <div class="detail"><span class="badge ${badgeClass}">${r.flag} ${displayRegion}</span> · ${person.phone}</div>
+                <div class="next-oncall">Next on-call: Week of ${formatDate(getWeekStart(nextWeek || currentWeek))}</div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
 
-        function updateStats() {
-            var keys = getRegionKeys();
-            var ac = keys.filter(function(r){return isRegionActive(r);}).length;
-            document.getElementById('statActiveRegions').textContent = ac+' / '+keys.length;
-            document.getElementById('statOnCall').textContent = (ac*2)+' / '+(keys.length*2);
-            var now = new Date();
-            var utcH = now.getUTCHours()+now.getUTCMinutes()/60;
-            var handoffs = currentMode==='weekend'?SETTINGS.handoffs.weekend:SETTINGS.handoffs.weekday;
-            var boundaries = handoffs.map(function(h){var p=h.utcTime.split(':');return parseInt(p[0])+parseInt(p[1]||0)/60;});
-            boundaries.sort(function(a,b){return a-b;});
-            var nb = null;
-            for(var i=0;i<boundaries.length;i++){if(boundaries[i]>utcH){nb=boundaries[i];break;}}
-            if(!nb) nb = (boundaries[0]||0)+24;
-            var hl = nb-utcH;
-            document.getElementById('statNextHandoff').textContent = Math.floor(hl)+'h '+Math.floor((hl%1)*60)+'m';
-            document.getElementById('statWeek').textContent = formatDate(getWeekStart(getWeekNumber(now)));
-            var ind = document.getElementById('dayTypeIndicator');
-            var isWE = isTodayWeekend();
-            if(currentMode==='weekday'){
-                ind.className='tab-indicator weekday';
-                ind.textContent=isWE?'📋 Weekday (Viewing)':'📋 WEEKDAY — LIVE';
+function renderHandoffLog() {
+    const log = document.getElementById('handoffLog');
+    if (!log) return;
+    const now = new Date();
+    const todayStr = formatDate(now);
+
+    const handoffs = (currentMode === 'weekend'
+        ? SETTINGS.handoffs?.weekend
+        : SETTINGS.handoffs?.weekday) || [];
+
+    const currentWeek = getWeekNumber(now);
+    log.innerHTML = handoffs.map(h => {
+        const fromPair = getOnCallPair(h.from, currentWeek);
+        const toPair   = getOnCallPair(h.to, currentWeek);
+        const fromR = REGIONS[h.from] || {};
+        const toR   = REGIONS[h.to] || {};
+        const fromName = h.from === 'USA_EST' ? 'USA' : h.from;
+        const toName   = h.to === 'USA_EST' ? 'USA' : h.to;
+        let isPast = false;
+        try {
+            const handoffTime = new Date(todayStr + 'T' + h.utcTime + ':00Z');
+            isPast = now > handoffTime;
+        } catch {}
+        return `<div class="handoff-item" style="${isPast ? 'opacity:0.5;' : ''}">
+            <div class="handoff-time">${todayStr} ${h.utcTime} UTC ${isPast ? '✅' : '⏳'}</div>
+            <div class="handoff-arrow">→</div>
+            <div class="handoff-detail">
+                ${fromR.flag || ''} <strong>${fromName}</strong> (${fromPair.primary?.name || 'TBD'})
+                &nbsp;→&nbsp;
+                ${toR.flag || ''} <strong>${toName}</strong> (${toPair.primary?.name || 'TBD'})
+                <br><span style="color:var(--text-secondary);font-size:11px;">${h.note || ''}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function updateStats() {
+    const keys = getRegionKeys();
+    const activeCount = keys.filter(r => isRegionActive(r)).length;
+    const total = keys.length;
+    const safeSet = id => { const el = document.getElementById(id); return el; };
+
+    const el1 = safeSet('statActiveRegions'); if (el1) el1.textContent = activeCount + ' / ' + total;
+    const el2 = safeSet('statOnCall');        if (el2) el2.textContent = (activeCount * 2) + ' / ' + (total * 2);
+
+    const now = new Date();
+    const utcH = now.getUTCHours() + now.getUTCMinutes() / 60;
+    const boundaries = currentMode === 'weekend'
+        ? (SETTINGS.handoffs?.weekend || []).map(h => { const [hh, mm] = h.utcTime.split(':'); return parseInt(hh) + parseInt(mm || 0) / 60; })
+        : (SETTINGS.handoffs?.weekday || []).map(h => { const [hh, mm] = h.utcTime.split(':'); return parseInt(hh) + parseInt(mm || 0) / 60; });
+    boundaries.sort((a, b) => a - b);
+    let nextBoundary = boundaries.find(b => b > utcH);
+    if (!nextBoundary) nextBoundary = (boundaries[0] || 0) + 24;
+    const hoursLeft = nextBoundary - utcH;
+    const mins = Math.floor((hoursLeft % 1) * 60);
+    const hrs  = Math.floor(hoursLeft);
+    const el3 = safeSet('statNextHandoff'); if (el3) el3.textContent = hrs + 'h ' + mins + 'm';
+    const el4 = safeSet('statWeek');        if (el4) el4.textContent = formatDate(getWeekStart(getWeekNumber(now)));
+
+    // Day type indicator
+    const indicator = document.getElementById('dayTypeIndicator');
+    if (indicator) {
+        const isWeekend = isTodayWeekend();
+        const todayHols = isTodayHoliday();
+        const isHol = todayHols.length > 0;
+        const activeTab = document.querySelector('.tab-btn.active');
+        const viewingHoliday = activeTab && activeTab.id === 'tabHoliday';
+
+        if (viewingHoliday) {
+            indicator.className = 'tab-indicator holiday';
+            indicator.textContent = isHol
+                ? '🏖️ BANK HOLIDAY — ' + todayHols[0].name
+                : '🏖️ Bank Holidays (Viewing)';
+        } else if (currentMode === 'weekday') {
+            indicator.className = 'tab-indicator weekday';
+            if (isHol) {
+                indicator.textContent = '🏖️ Bank Holiday: ' + todayHols[0].name;
+                indicator.className = 'tab-indicator holiday';
             } else {
-                ind.className='tab-indicator weekend';
-                ind.textContent=isWE?'🌙 WEEKEND — LIVE':'🌙 Weekend (Viewing)';
+                indicator.textContent = isWeekend ? '📋 Weekday (Viewing)' : '📋 WEEKDAY — LIVE';
             }
+        } else {
+            indicator.className = 'tab-indicator weekend';
+            indicator.textContent = isWeekend ? '🌙 WEEKEND — LIVE' : '🌙 Weekend (Viewing)';
+        }
+    }
+}
+
+/* ===== NAVIGATION ===== */
+
+function changeWeek(delta) {
+    displayWeekOffset += delta;
+    renderSchedule(displayWeekOffset);
+}
+window.changeWeek = changeWeek;
+
+function goToCurrentWeek() {
+    displayWeekOffset = getWeekNumber(new Date());
+    renderSchedule(displayWeekOffset);
+}
+window.goToCurrentWeek = goToCurrentWeek;
+
+/* ===== BANK HOLIDAYS RENDERING ===== */
+
+function renderHolidays() {
+    const tbody = document.getElementById('holidayTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const todayStr = formatDate(new Date());
+    const regionKeys = getRegionKeys();
+    const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    let filtered = HOLIDAYS;
+    if (holidayFilter !== 'all') {
+        filtered = HOLIDAYS.filter(h => h.region === holidayFilter || h.region === 'ALL');
+    }
+
+    let upcomingCount = 0;
+    let pastCount = 0;
+
+    filtered.forEach(h => {
+        const d = new Date(h.date + 'T00:00:00');
+        const dayName = DAYS[d.getDay()];
+        const isWeekendDay = d.getDay() === 0 || d.getDay() === 6;
+        const isPast = h.date < todayStr;
+        const isToday = h.date === todayStr;
+        if (isPast) pastCount++;
+        else upcomingCount++;
+
+        // Determine which regions are affected
+        const affectedRegions = h.region === 'ALL' ? regionKeys : [h.region];
+        const regionBadges = affectedRegions.map(rk => {
+            const rr = REGIONS[rk];
+            if (!rr) return '';
+            const bc = rr.color === 'orange' ? 'badge-india' : rr.color === 'blue' ? 'badge-uk' : 'badge-usa';
+            const dn = rk === 'USA_EST' ? 'USA' : rk;
+            return `<span class="badge ${bc}">${rr.flag} ${dn}</span>`;
+        }).join(' ');
+
+        // Get on-call pair for that date (uses weekend shift since holidays = extended coverage)
+        const weekNum = Math.floor((d.getTime() - ROTATION_ANCHOR.getTime()) / (7*24*60*60*1000));
+        const oncallHtml = affectedRegions.map(rk => {
+            const pair = getOnCallPair(rk, weekNum);
+            const rr = REGIONS[rk];
+            if (!rr) return '';
+            return `<span style="font-size:11px;">${rr.flag} ${pair.primary?.name || 'TBD'} / ${pair.backup?.name || 'TBD'}</span>`;
+        }).join('<br>');
+
+        const coverageText = (SETTINGS.holidays?.treatAsWeekend)
+            ? '<span class="badge badge-holiday">Extended Shift</span>'
+            : '<span class="badge" style="background:rgba(63,185,80,0.15);color:var(--accent-green);">Normal Shift</span>';
+
+        const row = document.createElement('tr');
+        row.className = isPast ? 'holiday-row-past' : isToday ? 'holiday-row-today' : 'holiday-row-upcoming';
+        row.innerHTML = `
+            <td style="font-family:monospace;white-space:nowrap;">${h.date}${isToday ? ' <span class="badge badge-holiday">TODAY</span>' : ''}</td>
+            <td><span class="holiday-day-badge ${isWeekendDay ? 'weekend' : 'weekday'}">${dayName}</span></td>
+            <td><strong>${h.name}</strong></td>
+            <td>${h.region === 'ALL' ? '<span class="badge badge-all">🌍 All Regions</span>' : regionBadges}</td>
+            <td style="font-size:12px;color:var(--text-secondary);">${h.type}</td>
+            <td>${coverageText}</td>
+            <td>${oncallHtml}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    // Info bar
+    const infoBar = document.getElementById('holidayInfoBar');
+    if (infoBar) {
+        const todayHols = isTodayHoliday();
+        if (todayHols.length > 0) {
+            infoBar.innerHTML = `🏖️ <strong>Today is a Bank Holiday:</strong> ${todayHols.map(h => h.name).join(', ')} — Extended weekend shifts are active`;
+            infoBar.style.background = 'rgba(248,81,73,0.12)';
+            infoBar.style.color = 'var(--accent-red)';
+        } else {
+            infoBar.innerHTML = `📊 ${upcomingCount} upcoming holidays · ${pastCount} past | Bank holidays use extended (weekend) shifts for coverage`;
+            infoBar.style.background = '';
+            infoBar.style.color = '';
+        }
+    }
+
+    // Summary counts
+    const indiaCount = HOLIDAYS.filter(h => h.region === 'India' || h.region === 'ALL').length;
+    const ukCount    = HOLIDAYS.filter(h => h.region === 'UK' || h.region === 'ALL').length;
+    const usaCount   = HOLIDAYS.filter(h => h.region === 'USA_EST' || h.region === 'ALL').length;
+    const el1 = document.getElementById('holidayCountIndia'); if (el1) el1.textContent = indiaCount;
+    const el2 = document.getElementById('holidayCountUK');    if (el2) el2.textContent = ukCount;
+    const el3 = document.getElementById('holidayCountUSA');   if (el3) el3.textContent = usaCount;
+    const el4 = document.getElementById('holidayCountAll');   if (el4) el4.textContent = HOLIDAYS.length;
+}
+
+function filterHolidays(region) {
+    holidayFilter = region;
+    document.querySelectorAll('.holiday-filter').forEach(btn => {
+        btn.className = 'holiday-filter' + (btn.dataset.filter === region ? ' active' : '');
+    });
+    renderHolidays();
+}
+window.filterHolidays = filterHolidays;
+
+/* ===== ERROR DISPLAY ===== */
+
+function showError(msg) {
+    const el = document.getElementById('configError');
+    if (el) { el.textContent = '⚠️ ' + msg; el.classList.add('visible'); }
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+/* ===== INIT ===== */
+
+async function init() {
+    try {
+        await loadSettings();
+        await Promise.all([loadRoster(), loadHolidays()]);
+
+        // Auto-detect: bank holiday > weekend > weekday
+        const todayHols = isTodayHoliday();
+        if (todayHols.length > 0 && SETTINGS.holidays?.treatAsWeekend) {
+            currentMode = 'weekend'; // holidays use weekend/extended shifts
+            document.getElementById('tabWeekday').className = 'tab-btn';
+            document.getElementById('tabWeekend').className = 'tab-btn';
+            document.getElementById('tabHoliday').className = 'tab-btn active';
+            const holidaySection = document.getElementById('holidaySection');
+            if (holidaySection) holidaySection.style.display = 'block';
+        } else if (isTodayWeekend()) {
+            currentMode = 'weekend';
+            document.getElementById('tabWeekday').className = 'tab-btn';
+            document.getElementById('tabWeekend').className = 'tab-btn active';
         }
 
-        /* ===== NAVIGATION ===== */
-        function changeWeek(delta) { displayWeekOffset+=delta; renderSchedule(displayWeekOffset); }
-        function goToCurrentWeek() { displayWeekOffset=getWeekNumber(new Date()); renderSchedule(displayWeekOffset); }
-
-        /* ===== INIT ===== */
-        if(isTodayWeekend()) {
-            currentMode='weekend';
-            document.getElementById('tabWeekday').className='tab-btn';
-            document.getElementById('tabWeekend').className='tab-btn active';
-        }
         displayWeekOffset = getWeekNumber(new Date());
         renderAll();
-        setInterval(function(){updateClock();renderSunBar();renderOnCallCards();updateStats();},1000);
-        setInterval(renderAll,60000);
+        if (document.getElementById('holidaySection')?.style.display !== 'none') {
+            renderHolidays();
+        }
+
+        // Hide loading overlay
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.classList.add('hidden');
+
+        // Live updates
+        setInterval(() => {
+            updateClock();
+            renderSunBar();
+            renderOnCallCards();
+            updateStats();
+        }, 1000);
+        setInterval(renderAll, 60000);
+
+    } catch (err) {
+        console.error('ShftRota init error:', err);
+        showError(err.message + ' — Make sure config files exist. See README.');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
     </script>
 </body>
 </html>
+
