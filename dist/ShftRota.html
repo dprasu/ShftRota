@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShftRota — On-Call Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📞</text></svg>">
+    <style>
+/* ===================================================================
+   ShftRota — Follow-the-Sun On-Call Dashboard
+   Stylesheet v2.0
+   =================================================================== */
+
+/* ===== Tokens ===== */
+:root {
+    --bg-primary:    #0d1117;
+    --bg-secondary:  #161b22;
+    --bg-card:       #1c2333;
+    --text-primary:  #e6edf3;
+    --text-secondary:#8b949e;
+    --border:        #30363d;
+    --accent-blue:   #58a6ff;
+    --accent-green:  #3fb950;
+    --accent-red:    #f85149;
+    --accent-yellow: #d29922;
+    --accent-purple: #bc8cff;
+    --accent-cyan:   #39d2c0;
+    --accent-orange: #f0883e;
+}
+
+/* ===== Reset ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* ===== Header ===== */
+.header { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 16px 24px; }
+.header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.header h1 { font-size: 20px; font-weight: 600; }
+.header h1 span { color: var(--accent-cyan); }
+.header .meta { color: var(--text-secondary); font-size: 12px; margin-top: 6px; }
+.live-clock {
+    font-family: 'Cascadia Code', Consolas, monospace;
+    font-size: 16px; color: var(--accent-green); font-weight: 700;
+}
+.live-dot {
+    display: inline-block; width: 8px; height: 8px;
+    background: var(--accent-green); border-radius: 50%;
+    margin-right: 6px; animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ===== Tab Bar ===== */
+.tab-bar {
+    background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+    padding: 0 24px; display: flex; gap: 0;
+}
+.tab-btn {
+    background: none; border: none; color: var(--text-secondary);
+    font-size: 14px; font-weight: 600; padding: 12px 24px; cursor: pointer;
+    border-bottom: 3px solid transparent; transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+}
+.tab-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+.tab-btn.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); }
+.tab-btn .tab-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+.tab-btn .tab-badge.wd { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+.tab-btn .tab-badge.we { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+.tab-indicator { font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: 700; margin-left: auto; align-self: center; }
+.tab-indicator.weekday { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+.tab-indicator.weekend { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+
+/* ===== Layout ===== */
+.container { max-width: 1500px; margin: 0 auto; padding: 20px; }
+
+/* ===== Stats Row ===== */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+.stat-card .stat-value { font-size: 26px; font-weight: 700; margin: 4px 0; }
+.stat-card .stat-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-card.green  .stat-value { color: var(--accent-green); }
+.stat-card.blue   .stat-value { color: var(--accent-blue); }
+.stat-card.orange .stat-value { color: var(--accent-orange); }
+.stat-card.purple .stat-value { color: var(--accent-purple); }
+.stat-card.cyan   .stat-value { color: var(--accent-cyan); }
+
+/* ===== Region Cards ===== */
+.oncall-now { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.region-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px; position: relative; overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+.region-card.active { border-color: var(--accent-green); box-shadow: 0 0 20px rgba(63,185,80,0.15); }
+.region-card.active::before {
+    content: '🟢 ACTIVE NOW'; position: absolute; top: 12px; right: 14px;
+    font-size: 10px; font-weight: 700; color: var(--accent-green); letter-spacing: 0.5px;
+}
+.region-card:not(.active)::before {
+    content: '⚪ OFF SHIFT'; position: absolute; top: 12px; right: 14px;
+    font-size: 10px; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.5px;
+}
+.region-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.region-name.india { color: var(--accent-orange); }
+.region-name.uk    { color: var(--accent-blue); }
+.region-name.usa   { color: var(--accent-purple); }
+.region-shift { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; }
+.region-local {
+    font-family: 'Cascadia Code', Consolas, monospace;
+    font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;
+}
+.oncall-person { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.oncall-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #111;
+}
+.oncall-avatar.primary { background: var(--accent-green); }
+.oncall-avatar.backup  { background: var(--accent-yellow); }
+.oncall-detail { flex: 1; }
+.oncall-detail .name { font-weight: 600; font-size: 14px; }
+.oncall-detail .role { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.oncall-detail .contact { font-size: 11px; color: var(--accent-cyan); }
+
+/* ===== Follow-the-Sun Bar ===== */
+.sun-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+.sun-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+.sun-bar-container { position: relative; height: 50px; }
+.sun-track {
+    position: absolute; top: 0; left: 0; right: 0; height: 50px;
+    background: var(--bg-primary); border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--border);
+}
+.sun-segment {
+    position: absolute; top: 0; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: #fff; opacity: 0.85;
+}
+.sun-segment.india { background: var(--accent-orange); }
+.sun-segment.uk    { background: var(--accent-blue); }
+.sun-segment.usa   { background: var(--accent-purple); }
+.sun-now { position: absolute; top: -6px; bottom: -6px; width: 2px; background: var(--accent-red); z-index: 10; }
+.sun-now::after { content: '▼'; position: absolute; top: -14px; left: -5px; color: var(--accent-red); font-size: 12px; }
+.sun-hours {
+    display: flex; justify-content: space-between; margin-top: 4px;
+    font-size: 10px; color: var(--text-secondary);
+    font-family: 'Cascadia Code', Consolas, monospace;
+}
+
+/* ===== Weekly Schedule ===== */
+.schedule-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+.schedule-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.schedule-header h3 { font-size: 14px; font-weight: 600; }
+.schedule-nav { display: flex; gap: 6px; align-items: center; }
+.schedule-nav button {
+    background: var(--bg-primary); border: 1px solid var(--border);
+    color: var(--text-primary); padding: 5px 12px; border-radius: 4px;
+    cursor: pointer; font-size: 12px;
+}
+.schedule-nav button:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.schedule-nav .week-label { font-size: 13px; color: var(--text-secondary); min-width: 200px; text-align: center; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+    background: var(--bg-secondary); padding: 10px 14px; text-align: left;
+    font-weight: 600; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-secondary);
+}
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.current-week { background: rgba(63,185,80,0.06); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+.badge-primary { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+.badge-backup  { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
+.badge-india   { background: rgba(240,136,62,0.15); color: var(--accent-orange); }
+.badge-uk      { background: rgba(88,166,255,0.15); color: var(--accent-blue); }
+.badge-usa     { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+
+/* ===== Team Roster ===== */
+.roster-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+.roster-header { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600; }
+.roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; padding: 16px; }
+.roster-card {
+    background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; display: flex; align-items: center; gap: 12px;
+    transition: border-color 0.2s;
+}
+.roster-card:hover { border-color: var(--accent-blue); }
+.roster-card.on-duty { border-color: var(--accent-green); box-shadow: 0 0 8px rgba(63,185,80,0.12); }
+.roster-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; color: #111; flex-shrink: 0;
+}
+.roster-info { flex: 1; }
+.roster-info .name { font-weight: 600; font-size: 13px; }
+.roster-info .detail { font-size: 11px; color: var(--text-secondary); }
+.roster-info .next-oncall { font-size: 11px; color: var(--accent-cyan); margin-top: 2px; }
+.on-duty-badge {
+    font-size: 10px; font-weight: 700; color: var(--accent-green);
+    background: rgba(63,185,80,0.12); padding: 2px 8px; border-radius: 10px;
+    white-space: nowrap;
+}
+
+/* ===== Handoff Log ===== */
+.handoff-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+.handoff-header { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600; }
+.handoff-item { display: flex; gap: 12px; padding: 12px 20px; border-bottom: 1px solid rgba(48,54,61,0.5); align-items: flex-start; }
+.handoff-time {
+    font-family: 'Cascadia Code', Consolas, monospace;
+    font-size: 12px; color: var(--text-secondary); min-width: 140px; flex-shrink: 0;
+}
+.handoff-arrow { color: var(--accent-yellow); font-size: 14px; flex-shrink: 0; }
+.handoff-detail { font-size: 13px; flex: 1; }
+.handoff-detail strong { color: var(--accent-cyan); }
+
+/* ===== Footer ===== */
+.footer { text-align: center; color: var(--text-secondary); font-size: 11px; padding: 16px; }
+
+/* ===== Loading Overlay ===== */
+.loading-overlay {
+    position: fixed; inset: 0; background: var(--bg-primary);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 9999; transition: opacity 0.4s;
+}
+.loading-overlay.hidden { opacity: 0; pointer-events: none; }
+.loading-spinner {
+    width: 40px; height: 40px; border: 3px solid var(--border);
+    border-top-color: var(--accent-cyan); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { margin-top: 14px; color: var(--text-secondary); font-size: 13px; }
+
+/* ===== Config Error Banner ===== */
+.config-error {
+    background: rgba(248,81,73,0.1); border: 1px solid var(--accent-red);
+    border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;
+    color: var(--accent-red); font-size: 13px; display: none;
+}
+.config-error.visible { display: block; }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+    .oncall-now { grid-template-columns: 1fr; }
+    .roster-grid { grid-template-columns: 1fr; }
+    .schedule-header { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 600px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .tab-btn { padding: 10px 14px; font-size: 12px; }
+}
+
+    </style>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <div class="header">
+        <div class="header-top">
+            <h1>📞 <span>ShftRota — On-Call Dashboard</span></h1>
+            <div style="display:flex;align-items:center;gap:16px;">
+                <span class="tab-indicator" id="dayTypeIndicator">—</span>
+                <div><span class="live-dot"></span><span class="live-clock" id="utcClock">--:--:-- UTC</span></div>
+            </div>
+        </div>
+        <div class="meta">
+            Follow-the-Sun Coverage | 20 Engineers | 3 Regions | Escalation: 15 min | Auto-refreshes every 60s
+        </div>
+    </div>
+
+    <!-- ===== TAB BAR ===== -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('weekday')" id="tabWeekday">
+            📋 Weekday <span class="tab-badge wd">Mon – Fri</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('weekend')" id="tabWeekend">
+            🌙 Weekend <span class="tab-badge we">Sat – Sun</span>
+        </button>
+    </div>
+
+    <div class="container">
+
+        <!-- ===== STATS ROW ===== -->
+        <div class="stats-row">
+            <div class="stat-card green"><div class="stat-label">Regions Active</div><div class="stat-value" id="statActiveRegions">—</div></div>
+            <div class="stat-card blue"><div class="stat-label">Engineers On-Call</div><div class="stat-value" id="statOnCall">—</div></div>
+            <div class="stat-card orange"><div class="stat-label">Next Handoff</div><div class="stat-value" id="statNextHandoff" style="font-size:16px;">—</div></div>
+            <div class="stat-card purple"><div class="stat-label">Current Week</div><div class="stat-value" id="statWeek" style="font-size:16px;">—</div></div>
+            <div class="stat-card cyan"><div class="stat-label">Rotation Cycle</div><div class="stat-value">4 wk</div></div>
+        </div>
+
+        <!-- ===== CURRENT ON-CALL ===== -->
+        <div class="oncall-now" id="oncallCards"></div>
+
+        <!-- ===== FOLLOW-THE-SUN ===== -->
+        <div class="sun-section">
+            <h3 id="sunTitle">☀️ Follow-the-Sun — 24h UTC Coverage</h3>
+            <div class="sun-bar-container">
+                <div class="sun-track">
+                    <div class="sun-segment india" style="left:22.9%;width:33.3%;">🇮🇳 India</div>
+                    <div class="sun-segment uk"    style="left:33.3%;width:33.3%;">🇬🇧 UK</div>
+                    <div class="sun-segment usa"   style="left:54.2%;width:33.3%;">🇺🇸 USA EST</div>
+                    <div class="sun-now" id="sunNowLine" style="left:50%;"></div>
+                </div>
+            </div>
+            <div class="sun-hours">
+                <span>00</span><span>02</span><span>04</span><span>06</span><span>08</span>
+                <span>10</span><span>12</span><span>14</span><span>16</span><span>18</span>
+                <span>20</span><span>22</span><span>24</span>
+            </div>
+        </div>
+
+        <!-- ===== WEEKLY SCHEDULE ===== -->
+        <div class="schedule-section">
+            <div class="schedule-header">
+                <h3 id="scheduleTitle">📅 Weekly Rotation Schedule</h3>
+                <div class="schedule-nav">
+                    <button onclick="changeWeek(-4)">◀◀</button>
+                    <button onclick="changeWeek(-1)">◀ Prev</button>
+                    <span class="week-label" id="weekLabel">—</span>
+                    <button onclick="changeWeek(1)">Next ▶</button>
+                    <button onclick="changeWeek(4)">▶▶</button>
+                    <button onclick="goToCurrentWeek()" style="margin-left:8px;color:var(--accent-green);border-color:var(--accent-green);">📍 Today</button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Week</th>
+                        <th>Region</th>
+                        <th>Shift (UTC)</th>
+                        <th>🟢 Primary</th>
+                        <th>🟡 Backup</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduleBody"></tbody>
+            </table>
+        </div>
+
+        <!-- ===== HANDOFF LOG ===== -->
+        <div class="handoff-section">
+            <div class="handoff-header">🔄 Today's Handoff Log</div>
+            <div id="handoffLog"></div>
+        </div>
+
+        <!-- ===== TEAM ROSTER ===== -->
+        <div class="roster-section">
+            <div class="roster-header">👥 Team Roster (20 Engineers)</div>
+            <div class="roster-grid" id="rosterGrid"></div>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        ShftRota v2.0 — Follow-the-Sun On-Call Dashboard |
+        Escalation: Primary → 15 min → Backup → 15 min → Team Lead |
+        Auto-refresh: 60s | Built: 2026-03-13 17:39
+    </div>
+
+    <script>
+        /* ===== EMBEDDED CONFIG (generated by Build-Dashboard.ps1) ===== */
+        const TEAM = [
+            { name: "Ravi Kumar", initials: "RK", email: "ravi.kumar@corp.com", phone: "+91-98765-43210", region: "India", shift: "05:30-13:30" },
+            { name: "Priya Sharma", initials: "PS", email: "priya.sharma@corp.com", phone: "+91-98765-43211", region: "India", shift: "05:30-13:30" },
+            { name: "Amit Patel", initials: "AP", email: "amit.patel@corp.com", phone: "+91-98765-43212", region: "India", shift: "05:30-13:30" },
+            { name: "Neha Gupta", initials: "NG", email: "neha.gupta@corp.com", phone: "+91-98765-43213", region: "India", shift: "05:30-13:30" },
+            { name: "Sanjay Reddy", initials: "SR", email: "sanjay.reddy@corp.com", phone: "+91-98765-43214", region: "India", shift: "05:30-13:30" },
+            { name: "Kavitha Nair", initials: "KN", email: "kavitha.nair@corp.com", phone: "+91-98765-43215", region: "India", shift: "05:30-13:30" },
+            { name: "Deepak Joshi", initials: "DJ", email: "deepak.joshi@corp.com", phone: "+91-98765-43216", region: "India", shift: "05:30-13:30" },
+            { name: "Anita Singh", initials: "AS", email: "anita.singh@corp.com", phone: "+91-98765-43217", region: "India", shift: "05:30-13:30" },
+            { name: "James Wilson", initials: "JW", email: "james.wilson@corp.com", phone: "+44-7700-900100", region: "UK", shift: "08:00-16:00" },
+            { name: "Sarah Brown", initials: "SB", email: "sarah.brown@corp.com", phone: "+44-7700-900101", region: "UK", shift: "08:00-16:00" },
+            { name: "Omar Khan", initials: "OK", email: "omar.khan@corp.com", phone: "+44-7700-900102", region: "UK", shift: "08:00-16:00" },
+            { name: "Emily Clark", initials: "EC", email: "emily.clark@corp.com", phone: "+44-7700-900103", region: "UK", shift: "08:00-16:00" },
+            { name: "Liam O\'Brien", initials: "LO", email: "liam.obrien@corp.com", phone: "+44-7700-900104", region: "UK", shift: "08:00-16:00" },
+            { name: "Chloe Davies", initials: "CD", email: "chloe.davies@corp.com", phone: "+44-7700-900105", region: "UK", shift: "08:00-16:00" },
+            { name: "Mike Johnson", initials: "MJ", email: "mike.johnson@corp.com", phone: "+1-212-555-1201", region: "USA_EST", shift: "13:00-21:00" },
+            { name: "Jessica Lee", initials: "JL", email: "jessica.lee@corp.com", phone: "+1-212-555-1202", region: "USA_EST", shift: "13:00-21:00" },
+            { name: "Carlos Rivera", initials: "CR", email: "carlos.rivera@corp.com", phone: "+1-212-555-1203", region: "USA_EST", shift: "13:00-21:00" },
+            { name: "Ashley Moore", initials: "AM", email: "ashley.moore@corp.com", phone: "+1-212-555-1204", region: "USA_EST", shift: "13:00-21:00" },
+            { name: "David Chen", initials: "DC", email: "david.chen@corp.com", phone: "+1-212-555-1205", region: "USA_EST", shift: "13:00-21:00" },
+            { name: "Nicole Taylor", initials: "NT", email: "nicole.taylor@corp.com", phone: "+1-212-555-1206", region: "USA_EST", shift: "13:00-21:00" }
+        ];
+
+        const SETTINGS = {
+    "appName": "ShftRota",
+    "version": "2.0",
+    "description": "Follow-the-Sun On-Call Rota Dashboard",
+
+    "rotation": {
+        "anchorDate": "2026-03-02T00:00:00Z",
+        "cycleLengthWeeks": 4,
+        "weekendPairOffset": 1
+    },
+
+    "escalation": {
+        "minutes": 15,
+        "chain": ["Primary", "Backup", "Team Lead"]
+    },
+
+    "regions": [
+        {
+            "key": "India",
+            "flag": "🇮🇳",
+            "color": "orange",
+            "timezone": "Asia/Kolkata",
+            "tzLabel": "IST",
+            "utcOffset": 5.5,
+            "weekday": { "startUTC": 5.5,  "endUTC": 13.5, "label": "05:30–13:30" },
+            "weekend": { "startUTC": 0,    "endUTC": 12,   "label": "00:00–12:00" }
+        },
+        {
+            "key": "UK",
+            "flag": "🇬🇧",
+            "color": "blue",
+            "timezone": "Europe/London",
+            "tzLabel": "GMT",
+            "utcOffset": 0,
+            "weekday": { "startUTC": 8,  "endUTC": 16, "label": "08:00–16:00" },
+            "weekend": { "startUTC": 8,  "endUTC": 20, "label": "08:00–20:00" }
+        },
+        {
+            "key": "USA_EST",
+            "flag": "🇺🇸",
+            "color": "purple",
+            "timezone": "America/New_York",
+            "tzLabel": "EST",
+            "utcOffset": -5,
+            "weekday": { "startUTC": 13, "endUTC": 21, "label": "13:00–21:00" },
+            "weekend": { "startUTC": 12, "endUTC": 24, "label": "12:00–00:00" }
+        }
+    ],
+
+    "handoffs": {
+        "weekday": [
+            { "utcTime": "05:30", "from": "USA_EST", "to": "India",   "note": "Night → Morning handoff" },
+            { "utcTime": "08:00", "from": "India",   "to": "UK",      "note": "India/UK overlap begins (3.5h overlap)" },
+            { "utcTime": "13:00", "from": "UK",      "to": "USA_EST", "note": "UK/USA overlap begins (3h overlap)" },
+            { "utcTime": "13:30", "from": "India",   "to": "UK",      "note": "India shift ends — UK sole coverage" },
+            { "utcTime": "16:00", "from": "UK",      "to": "USA_EST", "note": "UK shift ends — USA sole coverage" },
+            { "utcTime": "21:00", "from": "USA_EST", "to": "India",   "note": "USA shift ends — India overnight begins" }
+        ],
+        "weekend": [
+            { "utcTime": "00:00", "from": "USA_EST", "to": "India",   "note": "USA shift ends → India weekend coverage begins" },
+            { "utcTime": "08:00", "from": "India",   "to": "UK",      "note": "India/UK overlap begins (4h overlap)" },
+            { "utcTime": "12:00", "from": "India",   "to": "UK",      "note": "India 12h shift ends → UK + USA coverage" },
+            { "utcTime": "12:00", "from": "UK",      "to": "USA_EST", "note": "UK/USA overlap begins (8h overlap)" },
+            { "utcTime": "20:00", "from": "UK",      "to": "USA_EST", "note": "UK 12h shift ends → USA sole coverage" },
+            { "utcTime": "24:00", "from": "USA_EST", "to": "India",   "note": "USA 12h shift ends → India overnight begins" }
+        ]
+    },
+
+    "refreshIntervalMs": 60000,
+    "clockIntervalMs": 1000
+}
+;
+
+        /* ===== DERIVED CONFIG ===== */
+        const REGIONS = {};
+        const WEEKEND_REGIONS = {};
+        SETTINGS.regions.forEach(function(r) {
+            REGIONS[r.key] = {
+                flag: r.flag, color: r.color,
+                shiftStart: r.weekday.startUTC, shiftEnd: r.weekday.endUTC,
+                tz: r.timezone, tzLabel: r.tzLabel, utcOffset: r.utcOffset
+            };
+            WEEKEND_REGIONS[r.key] = {
+                flag: r.flag, color: r.color,
+                shiftStart: r.weekend.startUTC, shiftEnd: r.weekend.endUTC,
+                tz: r.timezone, tzLabel: r.tzLabel, utcOffset: r.utcOffset,
+                shiftLabel: r.weekend.label
+            };
+        });
+
+        const ESCALATION_MINUTES = SETTINGS.escalation.minutes || 15;
+        const ROTATION_ANCHOR = new Date(SETTINGS.rotation.anchorDate);
+        let currentMode = 'weekday';
+        let currentWeekOffset = 0;
+        let displayWeekOffset = 0;
+
+        /* ===== HELPERS ===== */
+        function getActiveRegions() { return currentMode === 'weekend' ? WEEKEND_REGIONS : REGIONS; }
+        function getRegionKeys() { return Object.keys(REGIONS); }
+
+        function getWeekNumber(date) {
+            return Math.floor((date.getTime() - ROTATION_ANCHOR.getTime()) / (7*24*60*60*1000));
+        }
+        function getWeekStart(weekOffset) {
+            return new Date(ROTATION_ANCHOR.getTime() + weekOffset * 7*24*60*60*1000);
+        }
+        function getOnCallPair(region, weekOffset) {
+            var members = TEAM.filter(function(t) { return t.region === region; });
+            if (members.length < 2) return { primary: members[0]||{}, backup: members[1]||members[0]||{} };
+            var pairs = Math.floor(members.length / 2);
+            var adj = currentMode === 'weekend' ? weekOffset + 1 : weekOffset;
+            var pairIdx = ((adj % pairs) + pairs) % pairs;
+            return { primary: members[pairIdx*2], backup: members[pairIdx*2+1] };
+        }
+        function isRegionActive(region) {
+            var now = new Date();
+            var utcH = now.getUTCHours() + now.getUTCMinutes()/60;
+            var r = getActiveRegions()[region];
+            if (!r) return false;
+            if (r.shiftEnd > 24) return utcH >= r.shiftStart || utcH < (r.shiftEnd-24);
+            return utcH >= r.shiftStart && utcH < r.shiftEnd;
+        }
+        function isTodayWeekend() { var d = new Date().getUTCDay(); return d===0||d===6; }
+        function getLocalTime(tz) {
+            try { return new Date().toLocaleTimeString('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+            catch(e) { return '--:--:--'; }
+        }
+        function formatDate(d) { return d.toISOString().slice(0,10); }
+
+        /* ===== TABS ===== */
+        function switchTab(mode) {
+            currentMode = mode;
+            document.getElementById('tabWeekday').className = 'tab-btn' + (mode==='weekday'?' active':'');
+            document.getElementById('tabWeekend').className = 'tab-btn' + (mode==='weekend'?' active':'');
+            renderAll();
+        }
+
+        /* ===== RENDER ===== */
+        function renderAll() {
+            var now = new Date();
+            currentWeekOffset = getWeekNumber(now);
+            displayWeekOffset = currentWeekOffset;
+            updateClock(); renderOnCallCards(); renderSunBar();
+            renderSchedule(currentWeekOffset); renderRoster(); renderHandoffLog(); updateStats();
+            document.getElementById('sunTitle').textContent = currentMode==='weekend'
+                ? '🌙 Follow-the-Sun — Weekend Extended Shifts (UTC)'
+                : '☀️ Follow-the-Sun — 24h UTC Coverage';
+            document.getElementById('scheduleTitle').textContent = currentMode==='weekend'
+                ? '📅 Weekend Rotation Schedule (Sat–Sun)'
+                : '📅 Weekday Rotation Schedule (Mon–Fri)';
+        }
+
+        function updateClock() {
+            document.getElementById('utcClock').textContent =
+                new Date().toLocaleTimeString('en-GB',{timeZone:'UTC',hour:'2-digit',minute:'2-digit',second:'2-digit'})+' UTC';
+        }
+
+        function renderOnCallCards() {
+            var weekOff = getWeekNumber(new Date());
+            var container = document.getElementById('oncallCards');
+            container.innerHTML = '';
+            var regs = getActiveRegions();
+            getRegionKeys().forEach(function(region) {
+                var r = regs[region]; if(!r) return;
+                var pair = getOnCallPair(region, weekOff);
+                var active = isRegionActive(region);
+                var localTime = getLocalTime(r.tz);
+                var displayName = region==='USA_EST'?'USA (EST)':region;
+                var shiftText = currentMode==='weekend'?(r.shiftLabel||''):(pair.primary.shift||'');
+                var colorClass = r.color==='orange'?'india':r.color==='blue'?'uk':'usa';
+                var card = document.createElement('div');
+                card.className = 'region-card'+(active?' active':'');
+                card.innerHTML =
+                    '<div class="region-name '+colorClass+'">'+r.flag+' '+displayName+'</div>'+
+                    '<div class="region-shift">Shift: '+shiftText+' UTC '+(currentMode==='weekend'?'(extended)':'')+'</div>'+
+                    '<div class="region-local">🕐 Local: '+localTime+' '+r.tzLabel+'</div>'+
+                    '<div class="oncall-person"><div class="oncall-avatar primary">'+(pair.primary.initials||'?')+'</div>'+
+                    '<div class="oncall-detail"><div class="name">'+(pair.primary.name||'TBD')+'</div>'+
+                    '<div class="role">🟢 Primary</div>'+
+                    '<div class="contact">📧 '+(pair.primary.email||'')+' · 📱 '+(pair.primary.phone||'')+'</div></div></div>'+
+                    '<div class="oncall-person"><div class="oncall-avatar backup">'+(pair.backup.initials||'?')+'</div>'+
+                    '<div class="oncall-detail"><div class="name">'+(pair.backup.name||'TBD')+'</div>'+
+                    '<div class="role">🟡 Backup ('+ESCALATION_MINUTES+' min escalation)</div>'+
+                    '<div class="contact">📧 '+(pair.backup.email||'')+' · 📱 '+(pair.backup.phone||'')+'</div></div></div>';
+                container.appendChild(card);
+            });
+        }
+
+        function renderSunBar() {
+            var now = new Date();
+            var utcH = now.getUTCHours()+now.getUTCMinutes()/60;
+            document.getElementById('sunNowLine').style.left = (utcH/24*100)+'%';
+            var segs = document.querySelectorAll('.sun-segment');
+            if(segs.length<3) return;
+            var regs = getActiveRegions();
+            var keys = getRegionKeys();
+            keys.forEach(function(key,i) {
+                if(!segs[i]||!regs[key]) return;
+                var r = regs[key];
+                var startPct = (r.shiftStart/24)*100;
+                var widthPct = ((r.shiftEnd-r.shiftStart)/24)*100;
+                var dn = key==='USA_EST'?'USA EST':key;
+                var sH = String(Math.floor(r.shiftStart)).padStart(2,'0')+':'+String(Math.round((r.shiftStart%1)*60)).padStart(2,'0');
+                var eRaw = r.shiftEnd>24?r.shiftEnd-24:r.shiftEnd;
+                var eH = String(Math.floor(eRaw)).padStart(2,'0')+':'+String(Math.round((eRaw%1)*60)).padStart(2,'0');
+                segs[i].style.left = startPct+'%';
+                segs[i].style.width = widthPct+'%';
+                segs[i].textContent = r.flag+' '+dn+' ('+sH+'–'+eH+' UTC)';
+            });
+        }
+
+        function renderSchedule(centerWeek) {
+            var tbody = document.getElementById('scheduleBody');
+            tbody.innerHTML = '';
+            var currentWeek = getWeekNumber(new Date());
+            var keys = getRegionKeys();
+            var rc = keys.length;
+            for (var w = centerWeek-2; w <= centerWeek+5; w++) {
+                var ws = getWeekStart(w);
+                var we = new Date(ws.getTime()+6*24*60*60*1000);
+                var isCurrent = (w===currentWeek);
+                keys.forEach(function(region, ri) {
+                    var pair = getOnCallPair(region,w);
+                    var regs = getActiveRegions();
+                    var r = regs[region]; if(!r) return;
+                    var dr = region==='USA_EST'?'USA EST':region;
+                    var bc = r.color==='orange'?'badge-india':r.color==='blue'?'badge-uk':'badge-usa';
+                    var st = currentMode==='weekend'?(r.shiftLabel||''):(pair.primary.shift||'');
+                    var wt = currentMode==='weekend'?'Sat-Sun':'Mon-Fri';
+                    var row = document.createElement('tr');
+                    if(isCurrent) row.className='current-week';
+                    row.innerHTML =
+                        (ri===0?'<td rowspan="'+rc+'" style="font-weight:600;white-space:nowrap;vertical-align:middle;">'+formatDate(ws)+'<br><span style="color:var(--text-secondary);font-size:11px;">to '+formatDate(we)+'</span><br><span style="color:var(--text-secondary);font-size:10px;">'+wt+'</span>'+(isCurrent?'<br><span class="badge badge-primary" style="margin-top:4px;">THIS WEEK</span>':'')+'</td>':'')+
+                        '<td><span class="badge '+bc+'">'+r.flag+' '+dr+'</span></td>'+
+                        '<td style="font-family:monospace;font-size:12px;">'+st+'</td>'+
+                        '<td><strong>'+(pair.primary.name||'TBD')+'</strong><br><span style="color:var(--text-secondary);font-size:11px;">'+(pair.primary.phone||'')+'</span></td>'+
+                        '<td>'+(pair.backup.name||'TBD')+'<br><span style="color:var(--text-secondary);font-size:11px;">'+(pair.backup.phone||'')+'</span></td>'+
+                        '<td>'+(isCurrent&&isRegionActive(region)?'<span class="badge badge-primary">🟢 Active</span>':isCurrent?'<span class="badge" style="background:rgba(139,148,158,0.15);color:var(--text-secondary);">⚪ Off-shift</span>':'<span style="color:var(--text-secondary);font-size:12px;">—</span>')+'</td>';
+                    tbody.appendChild(row);
+                });
+            }
+            var ws2 = getWeekStart(centerWeek);
+            var we2 = new Date(ws2.getTime()+6*24*60*60*1000);
+            document.getElementById('weekLabel').textContent = formatDate(ws2)+' → '+formatDate(we2);
+        }
+
+        function renderRoster() {
+            var grid = document.getElementById('rosterGrid');
+            grid.innerHTML = '';
+            var cw = getWeekNumber(new Date());
+            var onCallNow = {};
+            getRegionKeys().forEach(function(region) {
+                var pair = getOnCallPair(region,cw);
+                if(isRegionActive(region)) {
+                    if(pair.primary) onCallNow[pair.primary.name]='primary';
+                    if(pair.backup) onCallNow[pair.backup.name]='backup';
+                }
+            });
+            TEAM.forEach(function(person) {
+                var rm = TEAM.filter(function(t){return t.region===person.region;});
+                var pairs = Math.floor(rm.length/2);
+                var nextWeek = null;
+                for(var w=cw;w<cw+(pairs||1)*2;w++) {
+                    var pair=getOnCallPair(person.region,w);
+                    if((pair.primary&&pair.primary.name===person.name)||(pair.backup&&pair.backup.name===person.name)){
+                        if(w>cw||!nextWeek){nextWeek=w;break;}
+                    }
+                }
+                var regs = getActiveRegions();
+                var r = regs[person.region]; if(!r) return;
+                var duty = onCallNow[person.name];
+                var bc = r.color==='orange'?'badge-india':r.color==='blue'?'badge-uk':'badge-usa';
+                var dr = person.region==='USA_EST'?'USA EST':person.region;
+                var card = document.createElement('div');
+                card.className = 'roster-card'+(duty?' on-duty':'');
+                card.innerHTML =
+                    '<div class="roster-avatar" style="background:var(--accent-'+r.color+');">'+person.initials+'</div>'+
+                    '<div class="roster-info">'+
+                    '<div class="name">'+person.name+' '+(duty?'<span class="on-duty-badge">'+(duty==='primary'?'🟢 PRIMARY':'🟡 BACKUP')+'</span>':'')+'</div>'+
+                    '<div class="detail"><span class="badge '+bc+'">'+r.flag+' '+dr+'</span> · '+person.phone+'</div>'+
+                    '<div class="next-oncall">Next on-call: Week of '+formatDate(getWeekStart(nextWeek||cw))+'</div></div>';
+                grid.appendChild(card);
+            });
+        }
+
+        function renderHandoffLog() {
+            var log = document.getElementById('handoffLog');
+            var now = new Date();
+            var todayStr = formatDate(now);
+            var handoffs = currentMode==='weekend' ? SETTINGS.handoffs.weekend : SETTINGS.handoffs.weekday;
+            var cw = getWeekNumber(now);
+            log.innerHTML = handoffs.map(function(h) {
+                var fp = getOnCallPair(h.from,cw);
+                var tp = getOnCallPair(h.to,cw);
+                var fr = REGIONS[h.from]||{};
+                var tr = REGIONS[h.to]||{};
+                var fn = h.from==='USA_EST'?'USA':h.from;
+                var tn = h.to==='USA_EST'?'USA':h.to;
+                var isPast = false;
+                try { isPast = now > new Date(todayStr+'T'+h.utcTime+':00Z'); } catch(e){}
+                return '<div class="handoff-item" style="'+(isPast?'opacity:0.5;':'')+'">'+
+                    '<div class="handoff-time">'+todayStr+' '+h.utcTime+' UTC '+(isPast?'✅':'⏳')+'</div>'+
+                    '<div class="handoff-arrow">→</div>'+
+                    '<div class="handoff-detail">'+(fr.flag||'')+' <strong>'+fn+'</strong> ('+((fp.primary||{}).name||'TBD')+')'+
+                    ' &nbsp;→&nbsp; '+(tr.flag||'')+' <strong>'+tn+'</strong> ('+((tp.primary||{}).name||'TBD')+')'+
+                    '<br><span style="color:var(--text-secondary);font-size:11px;">'+(h.note||'')+'</span></div></div>';
+            }).join('');
+        }
+
+        function updateStats() {
+            var keys = getRegionKeys();
+            var ac = keys.filter(function(r){return isRegionActive(r);}).length;
+            document.getElementById('statActiveRegions').textContent = ac+' / '+keys.length;
+            document.getElementById('statOnCall').textContent = (ac*2)+' / '+(keys.length*2);
+            var now = new Date();
+            var utcH = now.getUTCHours()+now.getUTCMinutes()/60;
+            var handoffs = currentMode==='weekend'?SETTINGS.handoffs.weekend:SETTINGS.handoffs.weekday;
+            var boundaries = handoffs.map(function(h){var p=h.utcTime.split(':');return parseInt(p[0])+parseInt(p[1]||0)/60;});
+            boundaries.sort(function(a,b){return a-b;});
+            var nb = null;
+            for(var i=0;i<boundaries.length;i++){if(boundaries[i]>utcH){nb=boundaries[i];break;}}
+            if(!nb) nb = (boundaries[0]||0)+24;
+            var hl = nb-utcH;
+            document.getElementById('statNextHandoff').textContent = Math.floor(hl)+'h '+Math.floor((hl%1)*60)+'m';
+            document.getElementById('statWeek').textContent = formatDate(getWeekStart(getWeekNumber(now)));
+            var ind = document.getElementById('dayTypeIndicator');
+            var isWE = isTodayWeekend();
+            if(currentMode==='weekday'){
+                ind.className='tab-indicator weekday';
+                ind.textContent=isWE?'📋 Weekday (Viewing)':'📋 WEEKDAY — LIVE';
+            } else {
+                ind.className='tab-indicator weekend';
+                ind.textContent=isWE?'🌙 WEEKEND — LIVE':'🌙 Weekend (Viewing)';
+            }
+        }
+
+        /* ===== NAVIGATION ===== */
+        function changeWeek(delta) { displayWeekOffset+=delta; renderSchedule(displayWeekOffset); }
+        function goToCurrentWeek() { displayWeekOffset=getWeekNumber(new Date()); renderSchedule(displayWeekOffset); }
+
+        /* ===== INIT ===== */
+        if(isTodayWeekend()) {
+            currentMode='weekend';
+            document.getElementById('tabWeekday').className='tab-btn';
+            document.getElementById('tabWeekend').className='tab-btn active';
+        }
+        displayWeekOffset = getWeekNumber(new Date());
+        renderAll();
+        setInterval(function(){updateClock();renderSunBar();renderOnCallCards();updateStats();},1000);
+        setInterval(renderAll,60000);
+    </script>
+</body>
+</html>
