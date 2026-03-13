@@ -1,0 +1,71 @@
+{
+    "appName": "ShftRota",
+    "version": "2.0",
+    "description": "Follow-the-Sun On-Call Rota Dashboard",
+
+    "rotation": {
+        "anchorDate": "2026-03-02T00:00:00Z",
+        "cycleLengthWeeks": 4,
+        "weekendPairOffset": 1
+    },
+
+    "escalation": {
+        "minutes": 15,
+        "chain": ["Primary", "Backup", "Team Lead"]
+    },
+
+    "regions": [
+        {
+            "key": "India",
+            "flag": "🇮🇳",
+            "color": "orange",
+            "timezone": "Asia/Kolkata",
+            "tzLabel": "IST",
+            "utcOffset": 5.5,
+            "weekday": { "startUTC": 5.5,  "endUTC": 13.5, "label": "05:30–13:30" },
+            "weekend": { "startUTC": 0,    "endUTC": 12,   "label": "00:00–12:00" }
+        },
+        {
+            "key": "UK",
+            "flag": "🇬🇧",
+            "color": "blue",
+            "timezone": "Europe/London",
+            "tzLabel": "GMT",
+            "utcOffset": 0,
+            "weekday": { "startUTC": 8,  "endUTC": 16, "label": "08:00–16:00" },
+            "weekend": { "startUTC": 8,  "endUTC": 20, "label": "08:00–20:00" }
+        },
+        {
+            "key": "USA_EST",
+            "flag": "🇺🇸",
+            "color": "purple",
+            "timezone": "America/New_York",
+            "tzLabel": "EST",
+            "utcOffset": -5,
+            "weekday": { "startUTC": 13, "endUTC": 21, "label": "13:00–21:00" },
+            "weekend": { "startUTC": 12, "endUTC": 24, "label": "12:00–00:00" }
+        }
+    ],
+
+    "handoffs": {
+        "weekday": [
+            { "utcTime": "05:30", "from": "USA_EST", "to": "India",   "note": "Night → Morning handoff" },
+            { "utcTime": "08:00", "from": "India",   "to": "UK",      "note": "India/UK overlap begins (3.5h overlap)" },
+            { "utcTime": "13:00", "from": "UK",      "to": "USA_EST", "note": "UK/USA overlap begins (3h overlap)" },
+            { "utcTime": "13:30", "from": "India",   "to": "UK",      "note": "India shift ends — UK sole coverage" },
+            { "utcTime": "16:00", "from": "UK",      "to": "USA_EST", "note": "UK shift ends — USA sole coverage" },
+            { "utcTime": "21:00", "from": "USA_EST", "to": "India",   "note": "USA shift ends — India overnight begins" }
+        ],
+        "weekend": [
+            { "utcTime": "00:00", "from": "USA_EST", "to": "India",   "note": "USA shift ends → India weekend coverage begins" },
+            { "utcTime": "08:00", "from": "India",   "to": "UK",      "note": "India/UK overlap begins (4h overlap)" },
+            { "utcTime": "12:00", "from": "India",   "to": "UK",      "note": "India 12h shift ends → UK + USA coverage" },
+            { "utcTime": "12:00", "from": "UK",      "to": "USA_EST", "note": "UK/USA overlap begins (8h overlap)" },
+            { "utcTime": "20:00", "from": "UK",      "to": "USA_EST", "note": "UK 12h shift ends → USA sole coverage" },
+            { "utcTime": "24:00", "from": "USA_EST", "to": "India",   "note": "USA 12h shift ends → India overnight begins" }
+        ]
+    },
+
+    "refreshIntervalMs": 60000,
+    "clockIntervalMs": 1000
+}

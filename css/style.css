@@ -1,0 +1,245 @@
+/* ===================================================================
+   ShftRota — Follow-the-Sun On-Call Dashboard
+   Stylesheet v2.0
+   =================================================================== */
+
+/* ===== Tokens ===== */
+:root {
+    --bg-primary:    #0d1117;
+    --bg-secondary:  #161b22;
+    --bg-card:       #1c2333;
+    --text-primary:  #e6edf3;
+    --text-secondary:#8b949e;
+    --border:        #30363d;
+    --accent-blue:   #58a6ff;
+    --accent-green:  #3fb950;
+    --accent-red:    #f85149;
+    --accent-yellow: #d29922;
+    --accent-purple: #bc8cff;
+    --accent-cyan:   #39d2c0;
+    --accent-orange: #f0883e;
+}
+
+/* ===== Reset ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* ===== Header ===== */
+.header { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 16px 24px; }
+.header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.header h1 { font-size: 20px; font-weight: 600; }
+.header h1 span { color: var(--accent-cyan); }
+.header .meta { color: var(--text-secondary); font-size: 12px; margin-top: 6px; }
+.live-clock {
+    font-family: 'Cascadia Code', Consolas, monospace;
+    font-size: 16px; color: var(--accent-green); font-weight: 700;
+}
+.live-dot {
+    display: inline-block; width: 8px; height: 8px;
+    background: var(--accent-green); border-radius: 50%;
+    margin-right: 6px; animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ===== Tab Bar ===== */
+.tab-bar {
+    background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+    padding: 0 24px; display: flex; gap: 0;
+}
+.tab-btn {
+    background: none; border: none; color: var(--text-secondary);
+    font-size: 14px; font-weight: 600; padding: 12px 24px; cursor: pointer;
+    border-bottom: 3px solid transparent; transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+}
+.tab-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+.tab-btn.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); }
+.tab-btn .tab-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+.tab-btn .tab-badge.wd { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+.tab-btn .tab-badge.we { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+.tab-indicator { font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: 700; margin-left: auto; align-self: center; }
+.tab-indicator.weekday { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+.tab-indicator.weekend { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+
+/* ===== Layout ===== */
+.container { max-width: 1500px; margin: 0 auto; padding: 20px; }
+
+/* ===== Stats Row ===== */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+.stat-card .stat-value { font-size: 26px; font-weight: 700; margin: 4px 0; }
+.stat-card .stat-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-card.green  .stat-value { color: var(--accent-green); }
+.stat-card.blue   .stat-value { color: var(--accent-blue); }
+.stat-card.orange .stat-value { color: var(--accent-orange); }
+.stat-card.purple .stat-value { color: var(--accent-purple); }
+.stat-card.cyan   .stat-value { color: var(--accent-cyan); }
+
+/* ===== Region Cards ===== */
+.oncall-now { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.region-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px; position: relative; overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+.region-card.active { border-color: var(--accent-green); box-shadow: 0 0 20px rgba(63,185,80,0.15); }
+.region-card.active::before {
+    content: '🟢 ACTIVE NOW'; position: absolute; top: 12px; right: 14px;
+    font-size: 10px; font-weight: 700; color: var(--accent-green); letter-spacing: 0.5px;
+}
+.region-card:not(.active)::before {
+    content: '⚪ OFF SHIFT'; position: absolute; top: 12px; right: 14px;
+    font-size: 10px; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.5px;
+}
+.region-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.region-name.india { color: var(--accent-orange); }
+.region-name.uk    { color: var(--accent-blue); }
+.region-name.usa   { color: var(--accent-purple); }
+.region-shift { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; }
+.region-local {
+    font-family: 'Cascadia Code', Consolas, monospace;
+    font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;
+}
+.oncall-person { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.oncall-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #111;
+}
+.oncall-avatar.primary { background: var(--accent-green); }
+.oncall-avatar.backup  { background: var(--accent-yellow); }
+.oncall-detail { flex: 1; }
+.oncall-detail .name { font-weight: 600; font-size: 14px; }
+.oncall-detail .role { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.oncall-detail .contact { font-size: 11px; color: var(--accent-cyan); }
+
+/* ===== Follow-the-Sun Bar ===== */
+.sun-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+.sun-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+.sun-bar-container { position: relative; height: 50px; }
+.sun-track {
+    position: absolute; top: 0; left: 0; right: 0; height: 50px;
+    background: var(--bg-primary); border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--border);
+}
+.sun-segment {
+    position: absolute; top: 0; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: #fff; opacity: 0.85;
+}
+.sun-segment.india { background: var(--accent-orange); }
+.sun-segment.uk    { background: var(--accent-blue); }
+.sun-segment.usa   { background: var(--accent-purple); }
+.sun-now { position: absolute; top: -6px; bottom: -6px; width: 2px; background: var(--accent-red); z-index: 10; }
+.sun-now::after { content: '▼'; position: absolute; top: -14px; left: -5px; color: var(--accent-red); font-size: 12px; }
+.sun-hours {
+    display: flex; justify-content: space-between; margin-top: 4px;
+    font-size: 10px; color: var(--text-secondary);
+    font-family: 'Cascadia Code', Consolas, monospace;
+}
+
+/* ===== Weekly Schedule ===== */
+.schedule-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+.schedule-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.schedule-header h3 { font-size: 14px; font-weight: 600; }
+.schedule-nav { display: flex; gap: 6px; align-items: center; }
+.schedule-nav button {
+    background: var(--bg-primary); border: 1px solid var(--border);
+    color: var(--text-primary); padding: 5px 12px; border-radius: 4px;
+    cursor: pointer; font-size: 12px;
+}
+.schedule-nav button:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.schedule-nav .week-label { font-size: 13px; color: var(--text-secondary); min-width: 200px; text-align: center; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+    background: var(--bg-secondary); padding: 10px 14px; text-align: left;
+    font-weight: 600; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--text-secondary);
+}
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.current-week { background: rgba(63,185,80,0.06); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+.badge-primary { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+.badge-backup  { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
+.badge-india   { background: rgba(240,136,62,0.15); color: var(--accent-orange); }
+.badge-uk      { background: rgba(88,166,255,0.15); color: var(--accent-blue); }
+.badge-usa     { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+
+/* ===== Team Roster ===== */
+.roster-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+.roster-header { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600; }
+.roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; padding: 16px; }
+.roster-card {
+    background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; display: flex; align-items: center; gap: 12px;
+    transition: border-color 0.2s;
+}
+.roster-card:hover { border-color: var(--accent-blue); }
+.roster-card.on-duty { border-color: var(--accent-green); box-shadow: 0 0 8px rgba(63,185,80,0.12); }
+.roster-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; color: #111; flex-shrink: 0;
+}
+.roster-info { flex: 1; }
+.roster-info .name { font-weight: 600; font-size: 13px; }
+.roster-info .detail { font-size: 11px; color: var(--text-secondary); }
+.roster-info .next-oncall { font-size: 11px; color: var(--accent-cyan); margin-top: 2px; }
+.on-duty-badge {
+    font-size: 10px; font-weight: 700; color: var(--accent-green);
+    background: rgba(63,185,80,0.12); padding: 2px 8px; border-radius: 10px;
+    white-space: nowrap;
+}
+
+/* ===== Handoff Log ===== */
+.handoff-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+.handoff-header { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600; }
+.handoff-item { display: flex; gap: 12px; padding: 12px 20px; border-bottom: 1px solid rgba(48,54,61,0.5); align-items: flex-start; }
+.handoff-time {
+    font-family: 'Cascadia Code', Consolas, monospace;
+    font-size: 12px; color: var(--text-secondary); min-width: 140px; flex-shrink: 0;
+}
+.handoff-arrow { color: var(--accent-yellow); font-size: 14px; flex-shrink: 0; }
+.handoff-detail { font-size: 13px; flex: 1; }
+.handoff-detail strong { color: var(--accent-cyan); }
+
+/* ===== Footer ===== */
+.footer { text-align: center; color: var(--text-secondary); font-size: 11px; padding: 16px; }
+
+/* ===== Loading Overlay ===== */
+.loading-overlay {
+    position: fixed; inset: 0; background: var(--bg-primary);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 9999; transition: opacity 0.4s;
+}
+.loading-overlay.hidden { opacity: 0; pointer-events: none; }
+.loading-spinner {
+    width: 40px; height: 40px; border: 3px solid var(--border);
+    border-top-color: var(--accent-cyan); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { margin-top: 14px; color: var(--text-secondary); font-size: 13px; }
+
+/* ===== Config Error Banner ===== */
+.config-error {
+    background: rgba(248,81,73,0.1); border: 1px solid var(--accent-red);
+    border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;
+    color: var(--accent-red); font-size: 13px; display: none;
+}
+.config-error.visible { display: block; }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+    .oncall-now { grid-template-columns: 1fr; }
+    .roster-grid { grid-template-columns: 1fr; }
+    .schedule-header { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 600px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .tab-btn { padding: 10px 14px; font-size: 12px; }
+}
